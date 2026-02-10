@@ -13,6 +13,7 @@ const VoucherCards = () => {
   const [error, setError] = useState("");
   const [cardsPerPage, setCardsPerPage] = useState(6);
   const [currentPage, setCurrentPage] = useState(1);
+  const [downloading, setDownloading] = useState(false); // NEW: Download state
   const cardsRef = useRef([]);
   const buttonRefs = useRef([]);
 
@@ -21,10 +22,7 @@ const VoucherCards = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch cards
         const cardsRes = await api.get(`/voucher/${id}/cards`);
-
-        // Fetch all vouchers to get the voucher details
         const vouchersRes = await api.get(`/vouchers`);
         const currentVoucher = vouchersRes.data.find((v) => v._id === id);
 
@@ -40,7 +38,6 @@ const VoucherCards = () => {
     fetchData();
   }, [id]);
 
-  // Pagination logic
   const totalPages = Math.ceil(cards.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -100,6 +97,8 @@ const VoucherCards = () => {
 
   const downloadAllCards = async () => {
     try {
+      setDownloading(true); // Start download
+
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -169,6 +168,8 @@ const VoucherCards = () => {
     } catch (err) {
       console.error("Error creating PDF:", err);
       alert(`Failed to create PDF: ${err.message}`);
+    } finally {
+      setDownloading(false); // End download
     }
   };
 
@@ -179,6 +180,27 @@ const VoucherCards = () => {
 
   return (
     <div className="p-6 mb-10">
+      {/* Download Progress Overlay */}
+      {downloading && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 text-center shadow-2xl">
+            <div className="mb-4">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-500 mx-auto"></div>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              Downloading...
+            </h3>
+            <p className="text-4xl font-bold text-green-600 mb-2">
+Entizar key en aukat my Allah ko yaad karen: 
+            </p>
+            <p className="text-2xl text-gray-600">Subhan Allah</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Please wait while we prepare your PDF...
+            </p>
+          </div>
+        </div>
+      )}
+
       <h2
         className="text-3xl font-bold mb-6 text-center"
         style={{ color: "#1f2937" }}
@@ -238,12 +260,13 @@ const VoucherCards = () => {
 
         <button
           onClick={downloadAllCards}
-          className="px-6 py-3 rounded transition"
+          disabled={downloading}
+          className="px-6 py-3 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ backgroundColor: "#22c55e", color: "#ffffff" }}
-          onMouseEnter={(e) => (e.target.style.backgroundColor = "#16a34a")}
-          onMouseLeave={(e) => (e.target.style.backgroundColor = "#22c55e")}
+          onMouseEnter={(e) => !downloading && (e.target.style.backgroundColor = "#16a34a")}
+          onMouseLeave={(e) => !downloading && (e.target.style.backgroundColor = "#22c55e")}
         >
-          Download All as PDF ({cards.length} cards)
+          {downloading ? "Downloading..." : `Download All as PDF (${cards.length} cards)`}
         </button>
       </div>
 
@@ -269,7 +292,6 @@ const VoucherCards = () => {
               textAlign: "center",
             }}
           >
-            {/* Logo */}
             <img
               src="/imgs/Logo.jpg"
               alt="Baitusslam Logo"
@@ -277,7 +299,6 @@ const VoucherCards = () => {
               crossOrigin="anonymous"
             />
 
-            {/* Title */}
             <h1
               style={{
                 fontSize: "2.25rem",
@@ -289,7 +310,6 @@ const VoucherCards = () => {
               Baitusslam
             </h1>
 
-            {/* Subtitle */}
             <p
               style={{
                 color: "rgb(55, 65, 81)",
@@ -301,7 +321,6 @@ const VoucherCards = () => {
               Es Ramzan apki sehat ka Zamin
             </p>
 
-            {/* Partner Name */}
             <p
               style={{
                 fontSize: "1.125rem",
@@ -313,7 +332,6 @@ const VoucherCards = () => {
               {card.shopName}
             </p>
 
-            {/* Branch Info */}
             <p
               style={{
                 fontSize: "0.75rem",
@@ -324,7 +342,6 @@ const VoucherCards = () => {
               {voucher.idName} - {voucher.partnerArea}
             </p>
 
-            {/* Discount Box */}
             <div
               style={{
                 backgroundColor: "rgb(220, 252, 231)",
@@ -357,7 +374,6 @@ const VoucherCards = () => {
               </p>
             </div>
 
-            {/* Specific Tests (if applicable) */}
             {voucher.discountType === "specific_tests" &&
               voucher.specificTests?.length > 0 && (
                 <div
@@ -391,7 +407,6 @@ const VoucherCards = () => {
                 </div>
               )}
 
-            {/* Expiry Date */}
             <p
               style={{
                 fontSize: "0.75rem",
@@ -404,7 +419,6 @@ const VoucherCards = () => {
               {new Date(voucher.expiryDate).toLocaleDateString("en-GB")}
             </p>
 
-            {/* Main Message */}
             <p
               style={{
                 fontSize: "1.5rem",
@@ -417,7 +431,6 @@ const VoucherCards = () => {
               Apki Dawa <br /> Ghareeb ki Madad
             </p>
 
-            {/* Zakat Message */}
             <p
               style={{
                 color: "rgb(55, 65, 81)",
@@ -428,12 +441,10 @@ const VoucherCards = () => {
               Apki zakat/khairat ka behatreen masraf
             </p>
 
-            {/* QR Code */}
             <div style={{ marginBottom: "12px" }}>
               <QRCode value={card.qrCode} size={120} />
             </div>
 
-            {/* Card Number */}
             <p
               style={{
                 color: "rgb(31, 41, 55)",
@@ -445,7 +456,6 @@ const VoucherCards = () => {
               {card.cardNumber}
             </p>
 
-            {/* Download Button */}
             <button
               ref={(el) => (buttonRefs.current[index] = el)}
               onClick={() => downloadCard(index)}
@@ -473,7 +483,6 @@ const VoucherCards = () => {
         ))}
       </div>
 
-      {/* Pagination Controls */}
       {cards.length > itemsPerPage && (
         <div className="mt-8 flex justify-between items-center bg-white p-4 rounded shadow">
           <div className="text-gray-600">

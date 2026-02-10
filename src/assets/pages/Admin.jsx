@@ -3,15 +3,18 @@ import CreateTech from "../componenets/CreateTech";
 import CreateVou from "../componenets/CreateVou";
 import ShowTechList from "../componenets/ShowTechList";
 import ShowVou from "../componenets/ShowVou";
+import ShowVouAdmin from "../componenets/ShowVouAdmin";
 
 const Admin = () => {
   const [active, setActive] = useState("tech");
 
   const navButtons = [
-    { id: "tech", label: "Add Lab Technician " },
-    { id: "labTechList", label: "Lab Technicians" },
+    { id: "tech", label: "Add Lab Technician" },
     { id: "vou", label: "Create Voucher" },
-    { id: "ShowVou", label: "All Vouchers Lists" },
+    { id: "labTechList", label: "All Lab Technicians" },
+    { id: "ShowVou", label: "Vouchers Details" },
+    { id: "ShowVouAdmin", label: "Technicians Details" },
+
   ];
 
   const activeLabel = navButtons.find((btn) => btn.id === active)?.label;
@@ -26,6 +29,8 @@ const Admin = () => {
         return <CreateVou />;
       case "ShowVou":
         return <ShowVou />;
+      case "ShowVouAdmin":
+        return <ShowVouAdmin />;
       default:
         return <CreateTech />;
     }
@@ -33,10 +38,9 @@ const Admin = () => {
 
   return (
     <div className=" ">
-      <nav className="bg-blue-600  flex sm:justify-end justify-center px-8">
+      <nav className="bg-blue-600  flex sm:justify-end justify-center px">
         <div className="px-10 py-2 ">
           <div className="flex items-center justify-right p-4">
-
             <div className="flex gap-4 flex-col grid-cols-2 sm:flex-row ">
               {navButtons.map((btn) => (
                 <button
@@ -56,15 +60,15 @@ const Admin = () => {
         </div>
       </nav>
 
-      <main className=" p-6 sm:p-15 ">
+      <main className=" p-5 sm:p-10  ">
         <div className="">
-          <h2 className="text-xl md:text-4xl font-bold text-gray-800 flex">{activeLabel}</h2>
-          <div className="h-1 w-20 sm:w-40 bg-blue-600 rounded mt-2"></div>
+          <h2 className="text-xl md:text-4xl font-bold text-gray-800 flex ">
+            {activeLabel}
+          </h2>
+          <div className="h-1 w-20 sm:w-40 bg-blue-600 rounded mt-2 mb-6"></div>
         </div>
 
-        <div className="bg-white ">
-          {renderContent()}
-        </div>
+        <div className="bg-white ">{renderContent()}</div>
       </main>
     </div>
   );

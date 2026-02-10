@@ -11,20 +11,28 @@ const Navbar = () => {
   };
 
   return (
-    <div className="text-5xl py-4 text-center  flex items-center justify-between px-15 shadow-lg shadow-black-500">
-      <img src="/imgs/navbarlogo.svg" alt="" className="max-h-10" />
-      {user && (
-        <div className="flex items-center gap-4">
-          <span className="text-xl font-bold">Welcome, {user.name}</span>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-4 rounded-full text-xl"
-          >
-            Logout
-          </button>
-        </div>
-      )}
-    </div>
+    <nav className="bg-white shadow-md py-4 px-6">
+      <div className="mx-auto flex items-center justify-between">
+        <img src="/imgs/navbarlogo.svg" alt="Logo" className="h-8 sm:h-12" />
+
+        {user && (
+          <div className="flex  items-center gap-6">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm text-gray-600">Welcome back,</p>
+              <p className="text-sm md:text-lg font-semibold text-gray-800">
+                {user.name}
+              </p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white font-medium px-2 md:px-6 py-2 rounded-lg transition"
+            >
+              Logout
+            </button>
+          </div>
+        )}
+      </div>
+    </nav>
   );
 };
 

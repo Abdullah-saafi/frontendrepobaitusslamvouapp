@@ -11,18 +11,18 @@ const Routers = () => {
     <div className="main">
       <Routes>
         <Route element={<DefaultLayout />}>
-          <Route path={"/"} element={< Home />}></Route>
-          
+          <Route path={"/"} element={<Home />}></Route>
+
           {/* Admin route - only accessible by admin */}
           <Route
             path={"/admin"}
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
-                <Admin/>
+                <Admin />
               </ProtectedRoute>
             }
           ></Route>
-          
+
           {/* Lab Tech route - only accessible by lab_tech */}
           <Route
             path={"/labTech"}
@@ -32,7 +32,7 @@ const Routers = () => {
               </ProtectedRoute>
             }
           ></Route>
-          
+
           {/* Voucher cards - accessible by both admin and lab_tech */}
           <Route
             path="/voucher-cards/:id"

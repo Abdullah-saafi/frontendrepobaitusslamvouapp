@@ -1,462 +1,174 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 import QRCode from "react-qr-code";
+import { useAuth } from "../context/AuthContext";
 import * as XLSX from "xlsx";
 
 const ShowVouLabTech = () => {
-  const [vouchers, setVouchers] = useState([]);
-  const [filters, setFilters] = useState({
-    shopName: "",
-    qrNumber: "",
-    expiryDate: "",
-    discountType: "",
-    discountPercentage: "",
-  });
+  const { user } = useAuth();
+  const [scans, setScans] = useState([]);
+  const [dateRange, setDateRange] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
 
-  const fetchVouchers = async () => {
+  useEffect(() => {
+    fetchMyScans();
+  }, []);
+
+  const fetchMyScans = async () => {
     try {
       setLoading(true);
       const res = await api.get("/vouchers");
-      setVouchers(res.data);
-      setError("");
+
+      const myScans = [];
+
+      res.data.forEach((voucher) => {
+        voucher.cards.forEach((card) => {
+          if (
+            card.status === "used" &&
+            card.usedBy === user?.name &&
+            card.usedAt
+          ) {
+            myScans.push({
+              ...card,
+              shopName: voucher.shopName,
+              branch: `${voucher.idName} - ${voucher.partnerArea}`,
+              discount: voucher.discountPercentage,
+            });
+          }
+        });
+      });
+
+      myScans.sort((a, b) => new Date(b.usedAt) - new Date(a.usedAt));
+      setScans(myScans);
     } catch (err) {
-      setError("Failed to load vouchers", err);
+      setError("Failed to load data");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchVouchers();
-  }, []);
+  // 🔹 Date filter
+  const filteredScans = scans.filter((card) => {
+    const usedDate = new Date(card.usedAt);
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters]);
-
-  const handleFilterChange = (field, value) => {
-    setFilters((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      shopName: "",
-      qrNumber: "",
-      expiryDate: "",
-      discountType: "",
-      discountPercentage: "",
-    });
-  };
-
-  const getShopList = () => {
-    const shops = [...new Set(vouchers.map((v) => v.shopName))];
-    return shops.sort();
-  };
-
-  const getDiscountTypes = () => {
-    const types = [...new Set(vouchers.map((v) => v.discountType))];
-    return types.filter(Boolean).sort();
-  };
-
-  const getDiscountPercentages = () => {
-    const percentages = [...new Set(vouchers.map((v) => v.discountPercentage))];
-    return percentages.filter(Boolean).sort((a, b) => a - b);
-  };
-
-  const getFilteredCards = () => {
-    const allCards = [];
-
-    vouchers.forEach((voucher) => {
-      voucher.cards.forEach((card) => {
-        allCards.push({
-          ...card,
-          shopName: voucher.shopName,
-          discount: voucher.discountPercentage,
-          expiryDate: voucher.expiryDate,
-          discountType: voucher.discountType,
-          specificTests: voucher.specificTests,
-        });
-      });
-    });
-
-    let filtered = allCards;
-
-    // Apply shop name filter
-    if (filters.shopName) {
-      filtered = filtered.filter((card) => card.shopName === filters.shopName);
+    if (dateRange === "today") {
+      return usedDate >= startOfToday;
     }
 
-    // Apply QR number filter
-    if (filters.qrNumber.trim()) {
-      filtered = filtered.filter((card) =>
-        card.cardNumber
-          .toLowerCase()
-          .includes(filters.qrNumber.toLowerCase().trim()),
-      );
+    if (dateRange === "yesterday") {
+      const yesterday = new Date(startOfToday);
+      yesterday.setDate(yesterday.getDate() - 1);
+      return usedDate >= yesterday && usedDate < startOfToday;
     }
 
-    // Apply expiry date filter
-    if (filters.expiryDate) {
-      filtered = filtered.filter((card) => {
-        const cardExpiry = new Date(card.expiryDate)
-          .toISOString()
-          .split("T")[0];
-        return cardExpiry === filters.expiryDate;
-      });
+    if (dateRange === "last10days") {
+      const tenDaysAgo = new Date(startOfToday);
+      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+      return usedDate >= tenDaysAgo;
     }
 
-    // Apply discount type filter
-    if (filters.discountType) {
-      filtered = filtered.filter(
-        (card) => card.discountType === filters.discountType,
-      );
-    }
+    return true; // all
+  });
 
-    // Apply discount percentage filter
-    if (filters.discountPercentage) {
-      filtered = filtered.filter(
-        (card) => card.discount === parseInt(filters.discountPercentage),
-      );
-    }
-
-    return filtered;
-  };
-
+  // 🔹 Export to Excel
   const exportToExcel = () => {
-    const allFilteredCards = getFilteredCards();
-
-    // Prepare data for Excel
-    const excelData = allFilteredCards.map((card, index) => ({
+    const data = filteredScans.map((card, index) => ({
       "#": index + 1,
       "Shop Name": card.shopName,
+      "Branch": card.branch,
       "Card Number": card.cardNumber,
-      "QR Code": card.qrCode,
       "Discount (%)": card.discount,
-      "Discount Type": card.discountType || "-",
-      "Expiry Date": card.expiryDate
-        ? new Date(card.expiryDate).toLocaleDateString()
-        : "-",
-      Status: card.status,
-      "Used By": card.usedBy || "-",
-      "Used At": card.usedAt ? new Date(card.usedAt).toLocaleDateString() : "-",
+      "Scanned At": new Date(card.usedAt).toLocaleString(),
     }));
 
-    // Create worksheet
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-    // Create workbook
+    const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Voucher Cards");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "My Scans");
 
-    // Generate filename with timestamp
-    const timestamp = new Date().toISOString().split("T")[0];
-    const filename = `Voucher_Cards_${timestamp}.xlsx`;
-
-    // Export file
-    XLSX.writeFile(workbook, filename);
+    XLSX.writeFile(workbook, "My_Voucher_Scans.xlsx");
   };
 
   if (loading) {
     return (
-      <div className="p-6 flex justify-center items-center min-h-screen">
-        <div className="text-3xl text-red-600">
-          Say Subhan Allah Until Loading...
-        </div>
+      <div className="min-h-screen flex justify-center items-center text-2xl font-bold text-green-600">
+        Loading...
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6">
-        <div className="bg-red-100 text-red-700 p-4 rounded">{error}</div>
-      </div>
+      <div className="p-6 text-red-600 bg-red-100 rounded">{error}</div>
     );
   }
 
-  const shopList = getShopList();
-  const discountTypes = getDiscountTypes();
-  const discountPercentages = getDiscountPercentages();
-  const allFilteredCards = getFilteredCards();
-
-  // Pagination logic
-  const totalPages = Math.ceil(allFilteredCards.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const displayCards = allFilteredCards.slice(startIndex, endIndex);
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const goToPrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
   return (
-    <div className="p-6 mb-10">
-      <h2 className="text-3xl font-bold mb-4 text-gray-800">
-        Show All Voucher Cards
-      </h2>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">My Voucher Scans</h2>
 
-      {/* Filter Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-700">Search Filters</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={exportToExcel}
-              disabled={allFilteredCards.length === 0}
-              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              Export to Excel
-            </button>
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-            >
-              Clear All Filters
-            </button>
-          </div>
-        </div>
+      {/* 🔹 Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        <select
+          value={dateRange}
+          onChange={(e) => setDateRange(e.target.value)}
+          className="px-4 py-2 border rounded"
+        >
+          <option value="all">All</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="last10days">Last 10 Days</option>
+        </select>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Shop Name Filter */}
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-700">
-              Shop Name
-            </label>
-            <select
-              value={filters.shopName}
-              onChange={(e) => handleFilterChange("shopName", e.target.value)}
-              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">-- All Shops --</option>
-              {shopList.map((shop) => (
-                <option key={shop} value={shop}>
-                  {shop}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* QR/Card Number Filter */}
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-700">
-              Card/QR Number
-            </label>
-            <input
-              type="text"
-              value={filters.qrNumber}
-              onChange={(e) => handleFilterChange("qrNumber", e.target.value)}
-              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-              placeholder="Search card number..."
-            />
-          </div>
-
-          {/* Expiry Date Filter */}
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-700">
-              Expiry Date
-            </label>
-            <input
-              type="date"
-              value={filters.expiryDate}
-              onChange={(e) => handleFilterChange("expiryDate", e.target.value)}
-              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Discount Type Filter */}
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-700">
-              Discount Type
-            </label>
-            <select
-              value={filters.discountType}
-              onChange={(e) =>
-                handleFilterChange("discountType", e.target.value)
-              }
-              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">-- All Types --</option>
-              {discountTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Discount Percentage Filter */}
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-700">
-              Discount Percentage
-            </label>
-            <select
-              value={filters.discountPercentage}
-              onChange={(e) =>
-                handleFilterChange("discountPercentage", e.target.value)
-              }
-              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">-- All Discounts --</option>
-              {discountPercentages.map((percentage) => (
-                <option key={percentage} value={percentage}>
-                  {percentage}%
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Active Filters Summary */}
-        <div className="mt-4 text-sm text-gray-600">
-          <strong>Results:</strong> {allFilteredCards.length} card(s) found
-        </div>
+        <button
+          onClick={exportToExcel}
+          disabled={filteredScans.length === 0}
+          className="px-4 py-2 bg-green-600 text-white rounded disabled:bg-gray-300"
+        >
+          Download Excel
+        </button>
       </div>
 
-      {/* Results Table */}
-      {allFilteredCards.length === 0 ? (
-        <p className="text-center text-gray-500 bg-white p-8 rounded shadow">
-          No cards found matching your filters
-        </p>
+      {filteredScans.length === 0 ? (
+        <p className="text-gray-500">No scans found</p>
       ) : (
-        <>
-          <div className="bg-white rounded shadow overflow-x-auto">
-            <table className="w-full border border-gray-400 border-collapse">
-              <thead className="bg-blue-600 text-white text-xl">
-                <tr>
-                  <th className="border border-gray-400 p-3 text-center">#</th>
-                  <th className="border border-gray-400 p-3 text-left">
-                    Shop Name
-                  </th>
-                  <th className="border border-gray-400 p-3 text-left">
-                    Card No
-                  </th>
-                  <th className="border border-gray-400 p-3 text-center">QR</th>
-                  <th className="border border-gray-400 p-3 text-center">
-                    Discount
-                  </th>
-                  <th className="border border-gray-400 p-3 text-center">
-                    Type
-                  </th>
-                  <th className="border border-gray-400 p-3 text-center">
-                    Expiry
-                  </th>
-                  <th className="border border-gray-400 p-3 text-center">
-                    Status
-                  </th>
-                  <th className="border border-gray-400 p-3 text-left">
-                    Used By
-                  </th>
-                  <th className="border border-gray-400 p-3 text-left">
-                    Used At
-                  </th>
+        <div className="bg-white rounded shadow overflow-x-auto">
+          <table className="w-full border">
+            <thead className="bg-blue-600 text-white">
+              <tr>
+                <th className="p-3 border">#</th>
+                <th className="p-3 border">Shop</th>
+                <th className="p-3 border">Branch</th>
+                <th className="p-3 border">Card</th>
+                <th className="p-3 border">QR</th>
+                <th className="p-3 border">Discount</th>
+                <th className="p-3 border">Date</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredScans.map((card, index) => (
+                <tr key={card.cardNumber} className="hover:bg-gray-50">
+                  <td className="p-3 border text-center">{index + 1}</td>
+                  <td className="p-3 border">{card.shopName}</td>
+                  <td className="p-3 border">{card.branch}</td>
+                  <td className="p-3 border font-mono">{card.cardNumber}</td>
+                  <td className="p-3 border text-center">
+                    <QRCode value={card.qrCode} size={50} />
+                  </td>
+                  <td className="p-3 border text-center text-green-600 font-bold">
+                    {card.discount}%
+                  </td>
+                  <td className="p-3 border text-sm">
+                    {new Date(card.usedAt).toLocaleString()}
+                  </td>
                 </tr>
-              </thead>
-
-              <tbody>
-                {displayCards.map((card, index) => (
-                  <tr key={card.cardNumber} className="hover:bg-gray-50">
-                    <td className="border border-gray-400 p-3 text-center font-bold">
-                      {startIndex + index + 1}
-                    </td>
-
-                    <td className="border border-gray-400 p-3">
-                      {card.shopName}
-                    </td>
-
-                    <td className="border border-gray-400 p-3 font-mono">
-                      {card.cardNumber}
-                    </td>
-
-                    <td className="border border-gray-400 p-3 flex justify-center">
-                      <QRCode value={card.qrCode} size={70} />
-                    </td>
-
-                    <td className="border border-gray-400 p-3 text-center font-semibold">
-                      {card.discount}%
-                    </td>
-
-                    <td className="border border-gray-400 p-3 text-center">
-                      {card.discountType || "-"}
-                    </td>
-
-                    <td className="border border-gray-400 p-3 text-center">
-                      {card.expiryDate
-                        ? new Date(card.expiryDate).toLocaleDateString()
-                        : "-"}
-                    </td>
-
-                    <td className="border border-gray-400 p-3 text-center">
-                      <span
-                        className={`px-3 py-1 rounded text-white text-xs ${
-                          card.status === "active"
-                            ? "bg-green-500"
-                            : card.status === "used"
-                              ? "bg-gray-500"
-                              : "bg-red-500"
-                        }`}
-                      >
-                        {card.status}
-                      </span>
-                    </td>
-
-                    <td className="border border-gray-400 p-3">
-                      {card.usedBy || "-"}
-                    </td>
-
-                    <td className="border border-gray-400 p-3">
-                      {card.usedAt
-                        ? new Date(card.usedAt).toLocaleDateString()
-                        : "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination Controls */}
-          <div className="mt-6 flex justify-between items-center bg-white p-4 rounded shadow">
-            <div className="text-gray-600">
-              Showing {startIndex + 1} to{" "}
-              {Math.min(endIndex, allFilteredCards.length)} of{" "}
-              {allFilteredCards.length} cards
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={goToPrevPage}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-
-              <div className="px-4 py-2 bg-gray-100 rounded">
-                Page {currentPage} of {totalPages}
-              </div>
-
-              <button
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
