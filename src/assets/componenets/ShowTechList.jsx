@@ -4,76 +4,113 @@ import api from "../../utils/api";
 const ShowTechList = () => {
   const [techs, setTechs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetchTechs();
+  }, []);
 
   const fetchTechs = async () => {
     try {
       const res = await api.get("/lab-techs");
       setTechs(res.data);
+      setError("");
     } catch (err) {
-      alert("Failed to load lab technicians");
+      setError("Failed to load lab technicians");
     } finally {
       setLoading(false);
     }
   };
 
   const deleteTech = async (id) => {
-    if (!window.confirm("Delete this technician?")) return;
-    await api.delete(
-      `https://bacendrepobaitusslamvouapp-production.up.railway.app/lab-tech/${id}`,
-    );
-    fetchTechs();
+    if (!window.confirm("Are you sure you want to delete this technician?"))
+      return;
+
+    try {
+      await api.delete(`/lab-tech/${id}`);
+      setTechs(techs.filter((tech) => tech._id !== id));
+    } catch (err) {
+      alert("Failed to delete technician");
+    }
   };
 
-  useEffect(() => {
-    fetchTechs();
-  }, []);
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <p className="text-lg text-gray-600">Loading technicians...</p>
+      </div>
+    );
+  }
 
-  if (loading) return <p className="p-4">Loading...</p>;
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
-      <h2 className="text-3xl font-bold mb-4">Lab Technicians</h2>
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-blue-600 text-white">
+              <tr>
+                <th className="px-6 py-4 text-left font-semibold">Role</th>
+                <th className="px-6 py-4 text-left font-semibold">Name</th>
+                <th className="px-6 py-4 text-left font-semibold">Email</th>
+                <th className="px-6 py-4 text-left font-semibold">Branch</th>
+                <th className="px-6 py-4 text-left font-semibold">Contact</th>
+                <th className="px-6 py-4 text-center font-semibold">Action</th>
+              </tr>
+            </thead>
 
-      <table className="w-full border border-gray-400 border-collapse">
-        <thead>
-          <tr className="bg-blue-600 text-white text-2xl px-6">
-            <th className="border border-gray-400 p-2">Role</th>
-            <th className="border border-gray-400 p-2">Name</th>
-            <th className="border border-gray-400 p-2">Email</th>
-            <th className="border border-gray-400 p-2">Branch</th>
-            <th className="border border-gray-400 p-2">Contact</th>
-            <th className="border border-gray-400 p-2">Action</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {techs.map((tech) => (
-            <tr key={tech._id} className="text-center text-md font-bold">
-              <td className="border border-gray-400 p-2">{tech.role}</td>
-              <td className="border border-gray-400 p-2">{tech.name}</td>
-              <td className="border border-gray-400 p-2">{tech.email}</td>
-              <td className="border border-gray-400 p-2">{tech.branchname}</td>
-              <td className="border border-gray-400 p-2">{tech.contact}</td>
-              <td className="border border-gray-400 p-2">
-                <button
-                  onClick={() => deleteTech(tech._id)}
-                  className="bg-red-500 text-white px-3 py-1 rounded"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-
-          {techs.length === 0 && (
-            <tr>
-              <td colSpan="6" className="border p-4 text-center">
-                No lab technicians found
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            <tbody className="divide-y divide-gray-200">
+              {techs.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="px-6 py-8 text-center text-gray-500"
+                  >
+                    No lab technicians found
+                  </td>
+                </tr>
+              ) : (
+                techs.map((tech) => (
+                  <tr key={tech._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      {tech.role}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {tech.name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {tech.email}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {tech.branchname}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {tech.contact}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        onClick={() => deleteTech(tech._id)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition font-medium"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
