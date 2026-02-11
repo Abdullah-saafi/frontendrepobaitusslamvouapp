@@ -64,8 +64,8 @@ const CreateVou = () => {
 
   const formFields = [
     { name: "shopName", label: "Partner", type: "text" ,placeholder: "e.g., IMTIAZ, NAHEED",},
-    { name: "idName", label: "Branch Code", type: "text", placeholder: "e.g., Imtiaz(IMT), j.jamsheed(J.)",},
-    { name: "partnerArea", label: "Branch Area", type: "text",placeholder: "e.g., 201", },
+    { name: "partnerArea", label: "Branch Area", type: "text",placeholder: "e.g., Imtiaz(IMT), j.jamsheed(J.)", },
+    { name: "idName", label: "Branch Code", type: "text", placeholder: "e.g., 201 ",},
     {
       name: "discountType",
       label: "Discount Type",

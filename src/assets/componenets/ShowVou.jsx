@@ -51,19 +51,12 @@ const ShowVou = () => {
   }, [filters]);
 
   const deleteVoucher = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this voucher?")) {
-      return;
-    }
+    if (!window.confirm("Are you sure you want to delete this voucher?")) return;
 
     try {
-      const res = await api.delete(
-        `https://bacendrepobaitusslamvouapp-production.up.railway.app/delete-voucher/${id}`,
-      );
-
-      if (res.data.success || res.data.message) {
-        alert(res.data.message || "Voucher deleted successfully");
-        fetchVouchers();
-      }
+      const res = await api.delete(`/delete-voucher/${id}`);
+      alert(res.data.message || "Voucher deleted successfully");
+      fetchVouchers();
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || "Failed to delete voucher");
