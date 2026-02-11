@@ -13,7 +13,11 @@ const Navbar = () => {
   return (
     <nav className="bg-white shadow-md py-4 px-6">
       <div className="mx-auto flex items-center justify-between">
+<<<<<<< HEAD
         <img src="/imgs/navbarlogo.svg" alt="Logo" className="h-8 sm:h-12" />
+=======
+        <img src="/imgs/navbarlogo.svg" alt="Logo" className="h-12" />
+>>>>>>> 679dd1fde3820e7bf0ca0c755e5de3708747c9b4
 
         {user && (
           <div className="flex  items-center gap-6">

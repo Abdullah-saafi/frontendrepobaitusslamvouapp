@@ -111,7 +111,11 @@ const CreateTech = () => {
           <div className="mt-8 col-span-2">
             <button
               type="submit"
+<<<<<<< HEAD
               className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition duration-"
+=======
+              className=" bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition duration-"
+>>>>>>> 679dd1fde3820e7bf0ca0c755e5de3708747c9b4
             >
               Create Lab Technician
             </button>
