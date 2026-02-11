@@ -27,7 +27,7 @@ const LoginComp = () => {
     setError("");
     try {
       const response = await axios.post(
-  "https://bacendrepobaitusslamvouapp-production.up.railway.app/api/auth/login",
+  "http://localhost:5000/login",
   data,
   { withCredentials: true }
 );
