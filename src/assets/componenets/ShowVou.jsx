@@ -540,20 +540,15 @@ const ShowVou = () => {
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
                   Discount Percentage
                 </label>
-                <select
+                <input
+                  type="text"
                   value={filters.discountPercentage}
                   onChange={(e) =>
                     handleFilterChange("discountPercentage", e.target.value)
                   }
+                  placeholder="Enter discount %..."
                   className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- All Discounts --</option>
-                  {discountPercentages.map((percentage) => (
-                    <option key={percentage} value={percentage}>
-                      {percentage}%
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
