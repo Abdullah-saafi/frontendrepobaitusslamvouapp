@@ -3,7 +3,7 @@ import api from "../../utils/api";
 import QRCode from "react-qr-code";
 import * as XLSX from "xlsx";
 
-const ShowAllLabAdmin = () => {
+const ShowAllCardAdmin = () => {
   const [vouchers, setVouchers] = useState([]);
   const [selectedLabTech, setSelectedLabTech] = useState("");
   const [dateRange, setDateRange] = useState("today");
@@ -222,9 +222,6 @@ const ShowAllLabAdmin = () => {
 
   return (
     <div className="p-6 mb-10">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">
-        Lab Tech Activity Dashboard
-      </h2>
 
       {/* Filters Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -483,4 +480,4 @@ const ShowAllLabAdmin = () => {
   );
 };
 
-export default ShowAllLabAdmin;
+export default ShowAllCardAdmin;

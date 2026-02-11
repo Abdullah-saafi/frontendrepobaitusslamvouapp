@@ -3,17 +3,17 @@ import CreateTech from "../componenets/CreateTech";
 import CreateVou from "../componenets/CreateVou";
 import ShowTechList from "../componenets/ShowTechList";
 import ShowVou from "../componenets/ShowVou";
-import ShowVouAdmin from "../componenets/ShowVouAdmin";
+import ShowVouAdmin from "../componenets/ShowAllLabAdmin";
 
 const Admin = () => {
   const [active, setActive] = useState("tech");
 
   const navButtons = [
-    { id: "tech", label: "Add Lab Technician" },
+    { id: "tech", label: "Add Lab Staff" },
     { id: "vou", label: "Create Voucher" },
-    { id: "labTechList", label: "All Lab Technicians" },
+    { id: "labTechList", label: "All Lab Staff" },
     { id: "ShowVou", label: "Vouchers Details" },
-    { id: "ShowVouAdmin", label: "Technicians Details" },
+    { id: "ShowVouAdmin", label: "Staff Details" },
 
   ];
 

@@ -154,11 +154,11 @@ const ShowVouLabTech = () => {
                   <td className="p-3 border text-center">{index + 1}</td>
                   <td className="p-3 border">{card.shopName}</td>
                   <td className="p-3 border">{card.branch}</td>
-                  <td className="p-3 border font-mono">{card.cardNumber}</td>
-                  <td className="p-3 border text-center">
+                  <td className="p-3 border ">{card.cardNumber}</td>
+                  <td className="p-1  flex justify-center">
                     <QRCode value={card.qrCode} size={50} />
                   </td>
-                  <td className="p-3 border text-center text-green-600 font-bold">
+                  <td className="p-3 border text-center font-bold">
                     {card.discount}%
                   </td>
                   <td className="p-3 border text-sm">

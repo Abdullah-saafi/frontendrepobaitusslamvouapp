@@ -1,5 +1,5 @@
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -13,8 +13,12 @@ const Navbar = () => {
   return (
     <nav className="bg-white shadow-md py-4 px-6">
       <div className="mx-auto flex items-center justify-between">
-        <img src="/imgs/navbarlogo.svg" alt="Logo" className="h-8 sm:h-12" />
-
+        <Link to="/">
+          <img src="/imgs/navbarlogo.svg" alt="Logo" className="h-8 sm:h-12" />
+        </Link>
+        <div className="text-sm md:text-2xl font-bold text-gray-800 hidden sm:block">
+          Baitussalam Voucher Management System
+        </div>
         {user && (
           <div className="flex  items-center gap-6">
             <div className="text-right hidden sm:block">

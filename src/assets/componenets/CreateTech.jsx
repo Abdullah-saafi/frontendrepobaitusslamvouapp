@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import api from "../../utils/api";
 
-const CreateTech = () => {
+const CreateStaffAdmin = () => {
   const { register, handleSubmit, reset, watch } = useForm();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -113,7 +113,7 @@ const CreateTech = () => {
               type="submit"
               className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition duration-"
             >
-              Create Lab Technician
+              Create Staff
             </button>
           </div>
         </div>
@@ -122,4 +122,4 @@ const CreateTech = () => {
   );
 };
 
-export default CreateTech;
+export default CreateStaffAdmin;

@@ -11,6 +11,11 @@ const ShowTechList = () => {
   const [report, setReport] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  
+  // Edit password modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTech, setEditTech] = useState(null);
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     fetchTechs();
@@ -55,6 +60,35 @@ const ShowTechList = () => {
     }
   };
 
+  const openEditModal = (tech) => {
+    setEditTech(tech);
+    setNewPassword("");
+    setShowEditModal(true);
+  };
+
+  const updatePassword = async () => {
+    if (!newPassword) {
+      alert("Please enter a password");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      alert("Password must be at least 6 characters");
+      return;
+    }
+
+    try {
+      await api.put(`/lab-tech/${editTech._id}/password`, {
+        password: newPassword
+      });
+      alert("Password updated successfully");
+      setShowEditModal(false);
+      setNewPassword("");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to update password");
+    }
+  };
+
   const deleteTech = async (id) => {
     if (!window.confirm("Delete this technician?")) return;
     
@@ -81,7 +115,6 @@ const ShowTechList = () => {
               <th className="px-4 py-3 text-left">Branch</th>
               <th className="px-4 py-3 text-left">Code</th>
               <th className="px-4 py-3 text-left">Contact</th>
-              <th className="px-4 py-3 text-center">Reports</th>
               <th className="px-4 py-3 text-center">Actions</th>
             </tr>
           </thead>
@@ -97,16 +130,11 @@ const ShowTechList = () => {
                 <td className="px-4 py-3">
                   <div className="flex gap-2 justify-center">
                     <button
-                      onClick={() => openReport(tech)}
-                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                      onClick={() => openEditModal(tech)}
+                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                     >
-                      Report
+                      Edit
                     </button>
-                  </div>
-                </td>
-                       <td className="px-4 py-3">
-                  <div className="flex gap-2 justify-center">
-       
                     <button
                       onClick={() => deleteTech(tech._id)}
                       className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
@@ -136,10 +164,10 @@ const ShowTechList = () => {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => openReport(tech)}
-                className="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600"
+                onClick={() => openEditModal(tech)}
+                className="flex-1 bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
               >
-                Report
+                Edit
               </button>
               <button
                 onClick={() => deleteTech(tech._id)}
@@ -151,6 +179,60 @@ const ShowTechList = () => {
           </div>
         ))}
       </div>
+
+      {/* Edit Password Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
+            
+            {/* Header */}
+            <div className="bg-blue-600 text-white p-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold">Edit Password</h2>
+              <button onClick={() => setShowEditModal(false)} className="text-2xl">&times;</button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-1">Technician Name</p>
+                <p className="font-medium text-lg">{editTech?.name}</p>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-1">Email</p>
+                <p className="font-medium">{editTech?.email}</p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 6 characters)"
+                  className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-gray-50 border-t flex justify-end gap-2">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={updatePassword}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Update Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Report Modal */}
       {showModal && (

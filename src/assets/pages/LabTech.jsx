@@ -32,7 +32,7 @@ const LabTech = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <h1 className="text-white text-2xl font-bold">
-              Lab Tech Dashboard
+              Lab Staff Dashboard
             </h1>
 
             <div className="flex gap-2">
