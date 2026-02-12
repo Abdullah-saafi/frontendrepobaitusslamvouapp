@@ -27,10 +27,10 @@ const LoginComp = () => {
     setError("");
     try {
       const response = await axios.post(
-  "http://localhost:5000/login",
-  data,
-  { withCredentials: true }
-);
+        "https://backendrepobaitusslamvou-production.up.railway.app/login",
+        data,
+        { withCredentials: true },
+      );
 
       // Store token and user data
       login(response.data, response.data.token);
