@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
   const verifyToken = async (token) => {
     try {
       const response = await axios.post(
-        "https://bacendrepobaitusslamvouapp-production.up.railway.app/verify",
+        "https://backendrepobaitusslamvou-production.up.railway.app/verify",
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
