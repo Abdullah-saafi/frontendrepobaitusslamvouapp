@@ -11,7 +11,6 @@ const LoginComp = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If user is already logged in, redirect to appropriate page
   useEffect(() => {
     if (user) {
       if (user.role === "admin") {
@@ -32,19 +31,8 @@ const LoginComp = () => {
         { withCredentials: true },
       );
 
-      // Store token and user data
       login(response.data, response.data.token);
-
-      // Navigate based on role
-      if (response.data.role === "admin") {
-        navigate("/admin");
-      } else if (response.data.role === "lab_tech") {
-        navigate("/labTech");
-      } else {
-        setError("Invalid role");
-      }
     } catch (err) {
-      console.error("Login failed", err);
       setError(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
@@ -56,7 +44,6 @@ const LoginComp = () => {
       <h2 className="text-2xl font-bold  md:py-10">
         Assalam-o-alaikum <br /> Please{" "}
         <span className="text-blue-900 text-3xl sm:text-5xl font-extrabold">
-          {" "}
           Login
         </span>
       </h2>
@@ -65,7 +52,7 @@ const LoginComp = () => {
       )}
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-6 w-full py-4 "
+        className="flex flex-col gap-6 w-full py-4"
       >
         <input
           {...register("email")}

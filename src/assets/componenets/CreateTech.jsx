@@ -8,14 +8,12 @@ const CreateTech = () => {
   const [error, setError] = useState("");
 
   const onSubmit = async (data) => {
-    // Validate passwords match
     if (data.password !== data.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
     try {
-      // Remove confirmPassword before sending
       const { confirmPassword, ...techData } = data;
       const response = await api.post("/create-lab-tech", techData);
 

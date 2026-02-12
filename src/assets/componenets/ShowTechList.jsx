@@ -4,15 +4,13 @@ import api from "../../utils/api";
 const ShowTechList = () => {
   const [techs, setTechs] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Report modal
+
   const [showModal, setShowModal] = useState(false);
   const [selectedTech, setSelectedTech] = useState(null);
   const [report, setReport] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  
-  // Edit password modal
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [editTech, setEditTech] = useState(null);
   const [newPassword, setNewPassword] = useState("");
@@ -36,23 +34,25 @@ const ShowTechList = () => {
   const openReport = (tech) => {
     setSelectedTech(tech);
     setShowModal(true);
-    
-    // Set default dates (last 7 days)
+
     const today = new Date();
     const weekAgo = new Date();
     weekAgo.setDate(today.getDate() - 7);
-    
-    setEndDate(today.toISOString().split('T')[0]);
-    setStartDate(weekAgo.toISOString().split('T')[0]);
-    
-    // Load report
-    loadReport(tech.name, weekAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]);
+
+    setEndDate(today.toISOString().split("T")[0]);
+    setStartDate(weekAgo.toISOString().split("T")[0]);
+
+    loadReport(
+      tech.name,
+      weekAgo.toISOString().split("T")[0],
+      today.toISOString().split("T")[0],
+    );
   };
 
   const loadReport = async (techName, start, end) => {
     try {
       const res = await api.get(`/tech-report/${techName}`, {
-        params: { startDate: start, endDate: end }
+        params: { startDate: start, endDate: end },
       });
       setReport(res.data);
     } catch (err) {
@@ -86,7 +86,7 @@ const ShowTechList = () => {
 
     try {
       await api.put(`/lab-tech/${editTech._id}/password`, {
-        password: newPassword
+        password: newPassword,
       });
       alert("Password updated successfully");
       setShowEditModal(false);
@@ -99,7 +99,7 @@ const ShowTechList = () => {
 
   const deleteTech = async (id) => {
     if (!window.confirm("Delete this technician?")) return;
-    
+
     try {
       await api.delete(`/lab-tech/${id}`);
       setTechs(techs.filter((t) => t._id !== id));
@@ -113,15 +113,12 @@ const ShowTechList = () => {
 
   return (
     <div className="p-6">
-
-
       {techs.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <p className="text-gray-500 text-lg">No technicians found</p>
         </div>
       ) : (
         <>
-          {/* Desktop Table */}
           <div className="hidden md:block bg-white rounded-lg shadow overflow-x-auto">
             <table className="w-full">
               <thead className="bg-blue-600 text-white">
@@ -146,7 +143,6 @@ const ShowTechList = () => {
                     <td className="px-4 py-3">{tech.contact}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2 justify-center">
-           
                         <button
                           onClick={() => openEditModal(tech)}
                           className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
@@ -167,18 +163,27 @@ const ShowTechList = () => {
             </table>
           </div>
 
-          {/* Mobile Cards */}
           <div className="md:hidden space-y-4">
             {techs.map((tech, i) => (
               <div key={tech._id} className="bg-white p-4 rounded-lg shadow">
                 <div className="flex justify-between items-start mb-3">
-                  <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">#{i + 1}</span>
+                  <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">
+                    #{i + 1}
+                  </span>
                 </div>
                 <h3 className="font-bold text-lg mb-2">{tech.name}</h3>
                 <div className="space-y-1 text-sm mb-3">
-                  <p><span className="text-gray-500">Email:</span> {tech.email}</p>
-                  <p><span className="text-gray-500">Branch:</span> {tech.branchname} ({tech.branchcode})</p>
-                  <p><span className="text-gray-500">Contact:</span> {tech.contact}</p>
+                  <p>
+                    <span className="text-gray-500">Email:</span> {tech.email}
+                  </p>
+                  <p>
+                    <span className="text-gray-500">Branch:</span>{" "}
+                    {tech.branchname} ({tech.branchcode})
+                  </p>
+                  <p>
+                    <span className="text-gray-500">Contact:</span>{" "}
+                    {tech.contact}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -206,20 +211,19 @@ const ShowTechList = () => {
         </>
       )}
 
-      {/* Edit Password Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg w-full max-w-md shadow-2xl">
-            
-            {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-lg">
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold">Update Password</h2>
-                  <p className="text-blue-100 text-sm mt-1">Change technician password</p>
+                  <p className="text-blue-100 text-sm mt-1">
+                    Change technician password
+                  </p>
                 </div>
-                <button 
-                  onClick={() => setShowEditModal(false)} 
+                <button
+                  onClick={() => setShowEditModal(false)}
                   className="text-white hover:bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center transition"
                 >
                   <span className="text-2xl">&times;</span>
@@ -227,25 +231,34 @@ const ShowTechList = () => {
               </div>
             </div>
 
-            {/* Content */}
             <div className="p-6">
               <div className="mb-6 bg-gray-50 p-4 rounded-lg">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Technician Name</p>
-                    <p className="font-semibold text-gray-800">{editTech?.name}</p>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Technician Name
+                    </p>
+                    <p className="font-semibold text-gray-800">
+                      {editTech?.name}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Email</p>
-                    <p className="font-semibold text-gray-800">{editTech?.email}</p>
+                    <p className="font-semibold text-gray-800">
+                      {editTech?.email}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Branch</p>
-                    <p className="font-semibold text-gray-800">{editTech?.branchname}</p>
+                    <p className="font-semibold text-gray-800">
+                      {editTech?.branchname}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Branch Code</p>
-                    <p className="font-semibold text-gray-800">{editTech?.branchcode}</p>
+                    <p className="font-semibold text-gray-800">
+                      {editTech?.branchcode}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -280,12 +293,12 @@ const ShowTechList = () => {
 
               <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
                 <p className="text-sm text-blue-800">
-                  <span className="font-semibold">Note:</span> Password must be at least 6 characters long
+                  <span className="font-semibold">Note:</span> Password must be
+                  at least 6 characters long
                 </p>
               </div>
             </div>
 
-            {/* Footer */}
             <div className="p-6 bg-gray-50 border-t rounded-b-lg flex justify-end gap-3">
               <button
                 onClick={() => setShowEditModal(false)}
@@ -304,20 +317,19 @@ const ShowTechList = () => {
         </div>
       )}
 
-      {/* Report Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
-            
-            {/* Header */}
             <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6">
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold">Technician Report</h2>
-                  <p className="text-green-100 text-sm mt-1">{selectedTech?.name} - {selectedTech?.branchname}</p>
+                  <p className="text-green-100 text-sm mt-1">
+                    {selectedTech?.name} - {selectedTech?.branchname}
+                  </p>
                 </div>
-                <button 
-                  onClick={() => setShowModal(false)} 
+                <button
+                  onClick={() => setShowModal(false)}
                   className="text-white hover:bg-green-500 rounded-full w-8 h-8 flex items-center justify-center transition"
                 >
                   <span className="text-2xl">&times;</span>
@@ -325,11 +337,12 @@ const ShowTechList = () => {
               </div>
             </div>
 
-            {/* Date Filter */}
             <div className="p-6 bg-gray-50 border-b">
               <div className="flex gap-3 items-end flex-wrap">
                 <div className="flex-1 min-w-[150px]">
-                  <label className="block text-sm font-semibold mb-2 text-gray-700">Start Date</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">
+                    Start Date
+                  </label>
                   <input
                     type="date"
                     value={startDate}
@@ -338,7 +351,9 @@ const ShowTechList = () => {
                   />
                 </div>
                 <div className="flex-1 min-w-[150px]">
-                  <label className="block text-sm font-semibold mb-2 text-gray-700">End Date</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">
+                    End Date
+                  </label>
                   <input
                     type="date"
                     value={endDate}
@@ -347,7 +362,9 @@ const ShowTechList = () => {
                   />
                 </div>
                 <button
-                  onClick={() => loadReport(selectedTech.name, startDate, endDate)}
+                  onClick={() =>
+                    loadReport(selectedTech.name, startDate, endDate)
+                  }
                   className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition font-medium shadow-md"
                 >
                   Search
@@ -355,56 +372,79 @@ const ShowTechList = () => {
               </div>
             </div>
 
-            {/* Report Content */}
             <div className="p-6 overflow-y-auto" style={{ maxHeight: "60vh" }}>
               {report.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">📊</div>
-                  <p className="text-gray-500 text-lg">No vouchers found for this period</p>
+                  <p className="text-gray-500 text-lg">
+                    No vouchers found for this period
+                  </p>
                 </div>
               ) : (
                 <>
-                  {/* Summary */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-lg text-white shadow-md">
                       <p className="text-3xl font-bold">{report.length}</p>
-                      <p className="text-sm text-blue-100 mt-1">Total Vouchers Used</p>
+                      <p className="text-sm text-blue-100 mt-1">
+                        Total Vouchers Used
+                      </p>
                     </div>
                     <div className="bg-gradient-to-br from-green-500 to-green-600 p-4 rounded-lg text-white shadow-md">
                       <p className="text-3xl font-bold">
                         {report.reduce((sum, r) => sum + r.discount, 0)}%
                       </p>
-                      <p className="text-sm text-green-100 mt-1">Total Discount Given</p>
+                      <p className="text-sm text-green-100 mt-1">
+                        Total Discount Given
+                      </p>
                     </div>
                     <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-4 rounded-lg text-white shadow-md">
                       <p className="text-3xl font-bold">
-                        {new Set(report.map(r => r.shopName)).size}
+                        {new Set(report.map((r) => r.shopName)).size}
                       </p>
-                      <p className="text-sm text-purple-100 mt-1">Unique Shops</p>
+                      <p className="text-sm text-purple-100 mt-1">
+                        Unique Shops
+                      </p>
                     </div>
                   </div>
 
-                  {/* Table */}
                   <div className="overflow-x-auto rounded-lg border border-gray-200">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-100">
                         <tr>
-                          <th className="px-4 py-3 text-left font-semibold text-gray-700">#</th>
-                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
-                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Shop Name</th>
-                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Card Number</th>
-                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Discount</th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">
+                            #
+                          </th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">
+                            Date
+                          </th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">
+                            Shop Name
+                          </th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">
+                            Card Number
+                          </th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">
+                            Discount
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {report.map((r, i) => (
                           <tr key={i} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-medium text-gray-600">{i + 1}</td>
-                            <td className="px-4 py-3">
-                              {r.usedAt ? new Date(r.usedAt).toLocaleDateString('en-GB') : 'N/A'}
+                            <td className="px-4 py-3 font-medium text-gray-600">
+                              {i + 1}
                             </td>
-                            <td className="px-4 py-3 font-medium">{r.shopName}</td>
-                            <td className="px-4 py-3 text-gray-600 font-mono text-xs">{r.cardNumber}</td>
+                            <td className="px-4 py-3">
+                              {r.usedAt
+                                ? new Date(r.usedAt).toLocaleDateString("en-GB")
+                                : "N/A"}
+                            </td>
+                            <td className="px-4 py-3 font-medium">
+                              {r.shopName}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600 font-mono text-xs">
+                              {r.cardNumber}
+                            </td>
                             <td className="px-4 py-3">
                               <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
                                 {r.discount}%
@@ -419,7 +459,6 @@ const ShowTechList = () => {
               )}
             </div>
 
-            {/* Footer */}
             <div className="p-6 bg-gray-50 border-t flex justify-end">
               <button
                 onClick={() => setShowModal(false)}

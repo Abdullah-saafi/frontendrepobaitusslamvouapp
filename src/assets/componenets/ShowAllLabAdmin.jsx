@@ -29,7 +29,6 @@ const ShowAllCardAdmin = () => {
     }
   };
 
-  // Get all used cards
   const getAllUsedCards = () => {
     const usedCards = [];
     vouchers.forEach((voucher) => {
@@ -46,14 +45,12 @@ const ShowAllCardAdmin = () => {
     return usedCards;
   };
 
-  // Get unique lab techs
   const getLabTechs = () => {
     const allCards = getAllUsedCards();
-    const techs = [...new Set(allCards.map(card => card.usedBy))];
+    const techs = [...new Set(allCards.map((card) => card.usedBy))];
     return techs.filter(Boolean).sort();
   };
 
-  // Filter by date
   const filterByDateRange = (cards) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -106,18 +103,18 @@ const ShowAllCardAdmin = () => {
     });
   };
 
-  // Get lab tech summary
   const getLabTechSummary = () => {
     const allCards = getAllUsedCards();
     let filteredCards = filterByDateRange(allCards);
-    
-    // Filter by selected lab tech
+
     if (selectedLabTech) {
-      filteredCards = filteredCards.filter(card => card.usedBy === selectedLabTech);
+      filteredCards = filteredCards.filter(
+        (card) => card.usedBy === selectedLabTech,
+      );
     }
-    
+
     const techMap = {};
-    
+
     filteredCards.forEach((card) => {
       if (!techMap[card.usedBy]) {
         techMap[card.usedBy] = {
@@ -128,27 +125,30 @@ const ShowAllCardAdmin = () => {
           scans: [],
         };
       }
-      
+
       techMap[card.usedBy].totalScans++;
       techMap[card.usedBy].totalDiscount += card.discount;
       techMap[card.usedBy].shops.add(card.shopName);
       techMap[card.usedBy].scans.push(card);
     });
 
-    return Object.values(techMap).map(tech => ({
-      ...tech,
-      shopCount: tech.shops.size,
-      shops: Array.from(tech.shops).join(", "),
-      scans: tech.scans.sort((a, b) => new Date(b.usedAt) - new Date(a.usedAt)),
-    })).sort((a, b) => b.totalScans - a.totalScans);
+    return Object.values(techMap)
+      .map((tech) => ({
+        ...tech,
+        shopCount: tech.shops.size,
+        shops: Array.from(tech.shops).join(", "),
+        scans: tech.scans.sort(
+          (a, b) => new Date(b.usedAt) - new Date(a.usedAt),
+        ),
+      }))
+      .sort((a, b) => b.totalScans - a.totalScans);
   };
 
-  // Export all data to Excel
   const exportAllToExcel = () => {
     const summary = getLabTechSummary();
 
     const excelData = [];
-    
+
     summary.forEach((tech) => {
       tech.scans.forEach((scan, index) => {
         excelData.push({
@@ -156,7 +156,7 @@ const ShowAllCardAdmin = () => {
           "Scan #": index + 1,
           "Shop Name": scan.shopName,
           "Card Number": scan.cardNumber,
-          "Discount": scan.discount + "%",
+          Discount: scan.discount + "%",
           "Scanned Date": new Date(scan.usedAt).toLocaleDateString(),
           "Scanned Time": new Date(scan.usedAt).toLocaleTimeString(),
         });
@@ -174,13 +174,12 @@ const ShowAllCardAdmin = () => {
     XLSX.writeFile(workbook, filename);
   };
 
-  // Export single lab tech data to Excel
   const exportSingleTechToExcel = (tech) => {
     const excelData = tech.scans.map((scan, index) => ({
       "Scan #": index + 1,
       "Shop Name": scan.shopName,
       "Card Number": scan.cardNumber,
-      "Discount": scan.discount + "%",
+      Discount: scan.discount + "%",
       "Scanned Date": new Date(scan.usedAt).toLocaleDateString(),
       "Scanned Time": new Date(scan.usedAt).toLocaleTimeString(),
     }));
@@ -218,14 +217,16 @@ const ShowAllCardAdmin = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Lab Technician Activity Report</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        Lab Technician Activity Report
+      </h1>
 
-      {/* Filters */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Lab Tech Search */}
           <div>
-            <label className="block text-sm font-semibold mb-2">Search Lab Technician</label>
+            <label className="block text-sm font-semibold mb-2">
+              Search Lab Technician
+            </label>
             <select
               value={selectedLabTech}
               onChange={(e) => setSelectedLabTech(e.target.value)}
@@ -240,9 +241,10 @@ const ShowAllCardAdmin = () => {
             </select>
           </div>
 
-          {/* Date Range */}
           <div>
-            <label className="block text-sm font-semibold mb-2">Date Range</label>
+            <label className="block text-sm font-semibold mb-2">
+              Date Range
+            </label>
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
@@ -258,11 +260,12 @@ const ShowAllCardAdmin = () => {
             </select>
           </div>
 
-          {/* Custom Date Range */}
           {dateRange === "custom" && (
             <>
               <div>
-                <label className="block text-sm font-semibold mb-2">Start Date</label>
+                <label className="block text-sm font-semibold mb-2">
+                  Start Date
+                </label>
                 <input
                   type="date"
                   value={customStartDate}
@@ -271,7 +274,9 @@ const ShowAllCardAdmin = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-2">End Date</label>
+                <label className="block text-sm font-semibold mb-2">
+                  End Date
+                </label>
                 <input
                   type="date"
                   value={customEndDate}
@@ -282,7 +287,6 @@ const ShowAllCardAdmin = () => {
             </>
           )}
 
-          {/* Export All Button */}
           <div className="flex items-end">
             <button
               onClick={exportAllToExcel}
@@ -294,13 +298,12 @@ const ShowAllCardAdmin = () => {
           </div>
         </div>
 
-        {/* Results Info */}
         <div className="mt-4 text-sm text-gray-600">
-          <strong>Found:</strong> {labTechSummary.length} lab technician(s) with activity
+          <strong>Found:</strong> {labTechSummary.length} lab technician(s) with
+          activity
         </div>
       </div>
 
-      {/* Lab Tech Cards */}
       {labTechSummary.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <p className="text-gray-500">No data found for selected filters</p>
@@ -309,12 +312,12 @@ const ShowAllCardAdmin = () => {
         <div className="space-y-6">
           {labTechSummary.map((tech) => (
             <div key={tech.name} className="bg-white rounded-lg shadow">
-              {/* Tech Header */}
               <div className="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
                 <div>
                   <h2 className="text-xl font-bold">{tech.name}</h2>
                   <p className="text-sm text-blue-100">
-                    {tech.totalScans} scans • {tech.shopCount} shops • {tech.totalDiscount}% total discount
+                    {tech.totalScans} scans • {tech.shopCount} shops •{" "}
+                    {tech.totalDiscount}% total discount
                   </p>
                 </div>
                 <button
@@ -325,7 +328,6 @@ const ShowAllCardAdmin = () => {
                 </button>
               </div>
 
-              {/* Tech Details Table */}
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-100">
@@ -341,8 +343,12 @@ const ShowAllCardAdmin = () => {
                     {tech.scans.map((scan, index) => (
                       <tr key={scan.cardNumber} className="hover:bg-gray-50">
                         <td className="border p-3">{index + 1}</td>
-                        <td className="border p-3 font-medium">{scan.shopName}</td>
-                        <td className="border p-3 font-mono text-sm">{scan.cardNumber}</td>
+                        <td className="border p-3 font-medium">
+                          {scan.shopName}
+                        </td>
+                        <td className="border p-3 font-mono text-sm">
+                          {scan.cardNumber}
+                        </td>
                         <td className="border p-3 text-center">
                           <span className="bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">
                             {scan.discount}%

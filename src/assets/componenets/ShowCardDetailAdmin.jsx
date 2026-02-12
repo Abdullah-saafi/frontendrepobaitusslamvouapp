@@ -163,7 +163,7 @@ const ShowCardDetailAdmin = () => {
   if (loading) {
     return (
       <div className="p-6 flex justify-center items-center min-h-screen">
-        <div className="text-3xl text-red-600">
+        <div className="text-2xl md:text-4xl text-red-600">
           Say Subhan Allah Until Loading...
         </div>
       </div>
@@ -203,7 +203,6 @@ const ShowCardDetailAdmin = () => {
 
   return (
     <div className="p-6 mb-10">
-
       {/* Filter Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
@@ -460,4 +459,3 @@ const ShowCardDetailAdmin = () => {
 };
 
 export default ShowCardDetailAdmin;
-

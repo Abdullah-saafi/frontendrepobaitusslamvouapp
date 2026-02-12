@@ -134,7 +134,6 @@ const ScanVou = () => {
         )}
       </div>
 
-      {/* Right: Details */}
       <div className="w-1/2 p-6 bg-gray-100 overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">📄 Card Details</h2>
 

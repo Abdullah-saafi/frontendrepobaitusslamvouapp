@@ -8,7 +8,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in (token in localStorage)
     const token = localStorage.getItem("token");
     if (token) {
       verifyToken(token);
@@ -18,7 +17,6 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const verifyToken = async (token) => {
-    // <-- This line was missing!
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/verify`,
