@@ -18,9 +18,10 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const verifyToken = async (token) => {
+    // <-- This line was missing!
     try {
       const response = await axios.post(
-        "https://backendrepobaitusslamvou-production.up.railway.app/verify",
+        `${import.meta.env.VITE_API_URL}/verify`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
