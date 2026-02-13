@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import api from "../../utils/api";
 
 const CreateTech = () => {
-  const { register, handleSubmit, reset, watch } = useForm();
+  const { register, handleSubmit, reset } = useForm();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -20,7 +20,6 @@ const CreateTech = () => {
       setMessage(response.data.message);
       setError("");
       reset();
-      alert("Lab Tech created successfully!");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create Lab Tech");
       setMessage("");

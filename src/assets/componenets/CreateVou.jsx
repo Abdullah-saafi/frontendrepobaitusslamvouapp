@@ -44,7 +44,6 @@ const CreateVou = () => {
       setCreatedVoucher(response.data.voucher);
       reset();
       setSpecificTests([""]);
-      alert("Voucher created successfully!");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create voucher");
       setMessage("");
@@ -63,9 +62,24 @@ const CreateVou = () => {
   };
 
   const formFields = [
-    { name: "shopName", label: "Partner", type: "text" ,placeholder: "e.g., IMTIAZ, NAHEED",},
-    { name: "partnerArea", label: "Branch Area", type: "text",placeholder: "e.g., Imtiaz(IMT), j.jamsheed(J.)", },
-    { name: "idName", label: "Branch Code", type: "text", placeholder: "e.g., 201 ",},
+    {
+      name: "shopName",
+      label: "Partner",
+      type: "text",
+      placeholder: "e.g., IMTIAZ, NAHEED",
+    },
+    {
+      name: "partnerArea",
+      label: "Branch Area",
+      type: "text",
+      placeholder: "e.g., Imtiaz(IMT), j.jamsheed(J.)",
+    },
+    {
+      name: "idName",
+      label: "Branch Code",
+      type: "text",
+      placeholder: "e.g., 201 ",
+    },
     {
       name: "discountType",
       label: "Discount Type",
