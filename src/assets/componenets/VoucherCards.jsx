@@ -5,19 +5,28 @@ import html2canvas from "html2canvas";
 import { QRCode } from "react-qr-code";
 import jsPDF from "jspdf";
 
+// Prefix for image URLs stored as /uploads/partners/filename.jpg
+// Set VITE_API_BASE_URL in your .env — e.g. VITE_API_BASE_URL=http://localhost:5000
+const SERVER_BASE =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
 const VoucherCards = () => {
   const { id } = useParams();
   const [cards, setCards] = useState([]);
   const [voucher, setVoucher] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [cardsPerPage, setCardsPerPage] = useState(6);
+  const [cardsPerPage, setCardsPerPage] = useState(2);
   const [currentPage, setCurrentPage] = useState(1);
-  const [downloading, setDownloading] = useState(false); // NEW: Download state
+  const [downloading, setDownloading] = useState(false);
+
+  // UI-only opacity slider — no re-upload needed, image comes from the voucher
+  const [bgOpacity, setBgOpacity] = useState(15);
+
   const cardsRef = useRef([]);
   const buttonRefs = useRef([]);
 
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,7 +34,6 @@ const VoucherCards = () => {
         const cardsRes = await api.get(`/voucher/${id}/cards`);
         const vouchersRes = await api.get(`/vouchers`);
         const currentVoucher = vouchersRes.data.find((v) => v._id === id);
-
         setCards(cardsRes.data);
         setVoucher(currentVoucher);
         setLoading(false);
@@ -57,6 +65,38 @@ const VoucherCards = () => {
     }
   };
 
+  const formatDiscount = () => {
+    if (!voucher) return "";
+    return voucher.discountPercentage === "percentage"
+      ? `${voucher.discountValue}% OFF`
+      : `PKR ${voucher.discountValue} OFF`;
+  };
+
+  // Full URL for the partner image (null if none was uploaded)
+  const partnerImageUrl = voucher?.partnerImageUrl
+    ? `${SERVER_BASE}${voucher.partnerImageUrl}`
+    : null;
+
+  // ── Shared html2canvas config ─────────────────────────────────────────────
+  const getCanvasOptions = (index) => ({
+    backgroundColor: null,
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    onclone: (clonedDoc) => {
+      // If no partner image, force the gradient so the cloned element isn't bare
+      if (!partnerImageUrl) {
+        const el = clonedDoc.querySelector(`[data-card-index="${index}"]`);
+        if (el) {
+          el.style.background =
+            "linear-gradient(135deg, rgb(254,249,195), rgb(253,230,138))";
+        }
+      }
+    },
+  });
+  // ─────────────────────────────────────────────────────────────────────────
+
   const downloadCard = async (index) => {
     const element = cardsRef.current[index];
     const button = buttonRefs.current[index];
@@ -64,29 +104,11 @@ const VoucherCards = () => {
 
     try {
       if (button) button.style.display = "none";
-
-      const canvas = await html2canvas(element, {
-        backgroundColor: null,
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.querySelector(
-            `[data-card-index="${index}"]`,
-          );
-          if (clonedElement) {
-            clonedElement.style.background =
-              "linear-gradient(135deg, rgb(254, 249, 195), rgb(253, 230, 138))";
-          }
-        },
-      });
-
+      const canvas = await html2canvas(element, getCanvasOptions(index));
       const link = document.createElement("a");
       link.download = `${displayCards[index].cardNumber}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
-
       if (button) button.style.display = "block";
     } catch (err) {
       console.error("Error downloading card:", err);
@@ -97,53 +119,25 @@ const VoucherCards = () => {
 
   const downloadAllCards = async () => {
     try {
-      setDownloading(true); // Start download
+      setDownloading(true);
 
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
 
-      let cols, rows;
-      if (cardsPerPage === 6) {
-        cols = 2;
-        rows = 3;
-      } else if (cardsPerPage === 8) {
-        cols = 2;
-        rows = 4;
-      } else {
-        cols = 2;
-        rows = 3;
-      }
-
-      const cardWidth = (pageWidth - 20) / cols;
-      const cardHeight = (pageHeight - 20) / rows;
-      const margin = 10;
+      const cols = 3;
+      const rows = Math.ceil(cardsPerPage / cols);
+      const margin = 2;
+      const cardWidth = (pageWidth - margin * 2) / cols;
+      const cardHeight = (pageHeight - margin * 2) / rows;
 
       for (let i = 0; i < cards.length; i++) {
         const element = cardsRef.current[i];
         const button = buttonRefs.current[i];
-
         if (!element) continue;
 
         if (button) button.style.display = "none";
-
-        const canvas = await html2canvas(element, {
-          backgroundColor: null,
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          onclone: (clonedDoc) => {
-            const clonedElement = clonedDoc.querySelector(
-              `[data-card-index="${i}"]`,
-            );
-            if (clonedElement) {
-              clonedElement.style.background =
-                "linear-gradient(135deg, rgb(254, 249, 195), rgb(253, 230, 138))";
-            }
-          },
-        });
-
+        const canvas = await html2canvas(element, getCanvasOptions(i));
         if (button) button.style.display = "block";
 
         const imgData = canvas.toDataURL("image/png");
@@ -151,14 +145,20 @@ const VoucherCards = () => {
         const col = positionOnPage % cols;
         const row = Math.floor(positionOnPage / cols);
 
-        if (i > 0 && positionOnPage === 0) {
-          pdf.addPage();
-        }
+        if (i > 0 && positionOnPage === 0) pdf.addPage();
 
-        const x = margin + col * cardWidth;
-        const y = margin + row * cardHeight;
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
 
-        pdf.addImage(imgData, "PNG", x, y, cardWidth - 2, cardHeight - 2);
+        const ratio = Math.min(cardWidth / imgWidth, cardHeight / imgHeight);
+
+        const finalWidth = imgWidth * ratio;
+        const finalHeight = imgHeight * ratio;
+
+        const x = margin + col * cardWidth + (cardWidth - finalWidth) / 2;
+        const y = margin + row * cardHeight + (cardHeight - finalHeight) / 2;
+
+        pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
       }
 
       pdf.save(`voucher-cards-${id}.pdf`);
@@ -169,7 +169,7 @@ const VoucherCards = () => {
       console.error("Error creating PDF:", err);
       alert(`Failed to create PDF: ${err.message}`);
     } finally {
-      setDownloading(false); // End download
+      setDownloading(false);
     }
   };
 
@@ -180,20 +180,16 @@ const VoucherCards = () => {
 
   return (
     <div className="p-6 mb-10">
-      {/* Download Progress Overlay */}
+      {/* Download overlay */}
       {downloading && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 text-center shadow-2xl">
             <div className="mb-4">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-500 mx-auto"></div>
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-500 mx-auto" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
               Downloading...
             </h3>
-            <p className="text-4xl font-bold text-green-600 mb-2">
-Entizar key en aukat my Allah ko yaad karen: 
-            </p>
-            <p className="text-2xl text-gray-600">Subhan Allah</p>
             <p className="text-sm text-gray-500 mt-2">
               Please wait while we prepare your PDF...
             </p>
@@ -201,14 +197,11 @@ Entizar key en aukat my Allah ko yaad karen:
         </div>
       )}
 
-      <h2
-        className="text-3xl font-bold mb-6 text-center"
-        style={{ color: "#1f2937" }}
-      >
-        Voucher Cards
+      <h2 className="text-3xl font-bold mb-6 text-center text-[#1f2937]">
+        {voucher.voucherName || "Voucher Cards"}
       </h2>
 
-      {/* Voucher Summary */}
+      {/* Voucher summary */}
       <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
@@ -223,9 +216,7 @@ Entizar key en aukat my Allah ko yaad karen:
           </div>
           <div>
             <p className="text-gray-600">Discount:</p>
-            <p className="font-semibold text-green-600">
-              {voucher.discountPercentage}%
-            </p>
+            <p className="font-semibold text-green-600">{formatDiscount()}</p>
           </div>
           <div>
             <p className="text-gray-600">Expires:</p>
@@ -234,6 +225,7 @@ Entizar key en aukat my Allah ko yaad karen:
             </p>
           </div>
         </div>
+
         {voucher.discountType === "specific_tests" &&
           voucher.specificTests?.length > 0 && (
             <div className="mt-3">
@@ -245,251 +237,100 @@ Entizar key en aukat my Allah ko yaad karen:
           )}
       </div>
 
-      <div className="mb-6 flex gap-4 items-center">
+      {/* Controls row */}
+      <div className="m-1 flex gap-4 items-center flex-wrap">
         <div>
           <label className="mr-2 font-semibold">Cards per PDF page:</label>
           <select
             value={cardsPerPage}
             onChange={(e) => setCardsPerPage(Number(e.target.value))}
-            className="px-4 py-2 border border-gray-300 rounded"
+            className="flex gap-2 px-1 py-1 border border-gray-300 rounded"
           >
-            <option value={6}>6 cards (2x3)</option>
-            <option value={8}>8 cards (2x4)</option>
+            <option value={2}>2 cards (2)</option>
+            <option value={9}>4 cards (3×2)</option>
+            <option value={12}>6 cards (4×3)</option>
           </select>
         </div>
 
         <button
           onClick={downloadAllCards}
           disabled={downloading}
-          className="px-6 py-3 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: "#22c55e", color: "#ffffff" }}
-          onMouseEnter={(e) => !downloading && (e.target.style.backgroundColor = "#16a34a")}
-          onMouseLeave={(e) => !downloading && (e.target.style.backgroundColor = "#22c55e")}
+          className="px-1 py-1 bg-[#22c55e] text-white rounded transition disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#16a34a]"
         >
-          {downloading ? "Downloading..." : `Download All as PDF (${cards.length} cards)`}
+          {downloading
+            ? "Downloading..."
+            : `Download All as PDF (${cards.length} cards)`}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {displayCards.map((card, index) => (
-          <div
-            key={card.cardNumber}
-            ref={(el) => (cardsRef.current[index] = el)}
-            data-card-index={index}
-            style={{
-              width: "100%",
-              maxWidth: "25rem",
-              background:
-                "linear-gradient(135deg, rgb(254, 249, 195), rgb(253, 230, 138))",
-              border: "2px solid rgb(250, 204, 21)",
-              borderRadius: "0.75rem",
-              padding: "1.5rem",
-              boxShadow:
-                "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              textAlign: "center",
-            }}
-          >
-            <img
-              src="/imgs/Logo.jpg"
-              alt="Baitusslam Logo"
-              style={{ width: "80px", height: "80px", marginBottom: "12px" }}
-              crossOrigin="anonymous"
-            />
-
-            <h1
-              style={{
-                fontSize: "2.25rem",
-                fontWeight: "bold",
-                color: "rgb(113, 63, 18)",
-                marginBottom: "4px",
-              }}
-            >
-              Baitusslam
-            </h1>
-
-            <p
-              style={{
-                color: "rgb(55, 65, 81)",
-                fontStyle: "italic",
-                marginBottom: "12px",
-                fontSize: "0.875rem",
-              }}
-            >
-              Es Ramzan apki sehat ka Zamin
-            </p>
-
-            <p
-              style={{
-                fontSize: "1.125rem",
-                fontWeight: "600",
-                marginBottom: "4px",
-                color: "rgb(17, 24, 39)",
-              }}
-            >
-              {card.shopName}
-            </p>
-
-            <p
-              style={{
-                fontSize: "0.75rem",
-                color: "rgb(75, 85, 99)",
-                marginBottom: "8px",
-              }}
-            >
-              {voucher.idName} - {voucher.partnerArea}
-            </p>
-
+      {/* Cards grid */}
+      <main className="  ">
+        <div className="grid grid-cols-1 md:grid-cols-4  gap-2 my-2 relative">
+          {displayCards.map((card, index) => (
             <div
-              style={{
-                backgroundColor: "rgb(220, 252, 231)",
-                padding: "10px 20px",
-                borderRadius: "0.5rem",
-                marginBottom: "12px",
-                border: "2px solid rgb(34, 197, 94)",
-                width: "100%",
-              }}
+              key={card.cardNumber}
+              ref={(el) => (cardsRef.current[index] = el)}
+              data-card-index={index}
+              className="relative   w-[30rem] h-[55rem] rounded-xl  flex  flex-col  justify-center"
             >
-              <p
-                style={{
-                  fontSize: "1.75rem",
-                  fontWeight: "bold",
-                  color: "rgb(22, 163, 74)",
-                  marginBottom: "2px",
-                }}
-              >
-                {voucher.discountPercentage}% OFF
-              </p>
-              <p
-                style={{
-                  fontSize: "0.75rem",
-                  color: "rgb(55, 65, 81)",
-                }}
-              >
-                {voucher.discountType === "all_tests"
-                  ? "On All Tests"
-                  : "On Specific Tests"}
-              </p>
-            </div>
-
-            {voucher.discountType === "specific_tests" &&
-              voucher.specificTests?.length > 0 && (
-                <div
-                  style={{
-                    marginBottom: "12px",
-                    padding: "8px",
-                    backgroundColor: "rgb(254, 252, 232)",
-                    borderRadius: "0.375rem",
-                    width: "100%",
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: "0.7rem",
-                      fontWeight: "600",
-                      color: "rgb(113, 63, 18)",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    Valid for:
-                  </p>
-                  <p
-                    style={{
-                      fontSize: "0.65rem",
-                      color: "rgb(55, 65, 81)",
-                      lineHeight: "1.3",
-                    }}
-                  >
-                    {voucher.specificTests.join(", ")}
+              <div className="default-img-template">
+                {partnerImageUrl && (
+                  <img
+                    src={partnerImageUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none "
+                    crossOrigin="anonymous"
+                  />
+                )}
+              </div>
+              <div className="card-data relative  p-6 flex flex-col items-center text-center mt-25">
+                <div className="QRcode m-3 mt-4">
+                  <QRCode value={card.qrCode} size={300} />
+                </div>
+                <div className="Qrcode-No absolute top-99">
+                  <p className="text-[rgb(31,41,55)] font-semibold mb-1 text-md">
+                    {card.cardNumber}
                   </p>
                 </div>
-              )}
-
-            <p
-              style={{
-                fontSize: "0.75rem",
-                color: "rgb(185, 28, 28)",
-                fontWeight: "600",
-                marginBottom: "12px",
-              }}
-            >
-              Valid until:{" "}
-              {new Date(voucher.expiryDate).toLocaleDateString("en-GB")}
-            </p>
-
-            <p
-              style={{
-                fontSize: "1.5rem",
-                fontWeight: "bold",
-                color: "rgb(22, 163, 74)",
-                marginBottom: "8px",
-                lineHeight: "1.3",
-              }}
-            >
-              Apki Dawa <br /> Ghareeb ki Madad
-            </p>
-
-            <p
-              style={{
-                color: "rgb(55, 65, 81)",
-                fontSize: "0.75rem",
-                marginBottom: "16px",
-              }}
-            >
-              Apki zakat/khairat ka behatreen masraf
-            </p>
-
-            <div style={{ marginBottom: "12px" }}>
-              <QRCode value={card.qrCode} size={120} />
+                <div className="test-expiry  absolute right-[40px] top-30">
+                  <p
+                    style={{
+                      transform: "rotate(-90deg)",
+                      transformOrigin: "right top",
+                      whiteSpace: "nowrap",
+                    }}
+                    className="text-lg text-white font-semibold "
+                  >
+                    Valid until:{" "}
+                    {new Date(voucher.expiryDate).toLocaleDateString("en-GB")}
+                  </p>
+                </div>
+                <div
+                  className="download-card mt-128
+                 absolute"
+                >
+                  <button
+                    ref={(el) => (buttonRefs.current[index] = el)}
+                    onClick={() => downloadCard(index)}
+                    className="mt-auto py-2 px-4 bg-[rgb(59,130,246)] text-white rounded border-0 cursor-pointer text-sm font-semibold hover:bg-[rgb(37,99,235)]"
+                  >
+                    Download Card
+                  </button>
+                </div>
+              </div>
             </div>
+          ))}
+        </div>
+      </main>
 
-            <p
-              style={{
-                color: "rgb(31, 41, 55)",
-                fontWeight: "600",
-                marginBottom: "4px",
-                fontSize: "0.75rem",
-              }}
-            >
-              {card.cardNumber}
-            </p>
-
-            <button
-              ref={(el) => (buttonRefs.current[index] = el)}
-              onClick={() => downloadCard(index)}
-              style={{
-                marginTop: "auto",
-                padding: "0.5rem 1rem",
-                backgroundColor: "rgb(59, 130, 246)",
-                color: "rgb(255, 255, 255)",
-                borderRadius: "0.25rem",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "0.875rem",
-                fontWeight: "600",
-              }}
-              onMouseEnter={(e) =>
-                (e.target.style.backgroundColor = "rgb(37, 99, 235)")
-              }
-              onMouseLeave={(e) =>
-                (e.target.style.backgroundColor = "rgb(59, 130, 246)")
-              }
-            >
-              Download Card
-            </button>
-          </div>
-        ))}
-      </div>
-
+      {/* Pagination */}
       {cards.length > itemsPerPage && (
         <div className="mt-8 flex justify-between items-center bg-white p-4 rounded shadow">
           <div className="text-gray-600">
             Showing {startIndex + 1} to {Math.min(endIndex, cards.length)} of{" "}
             {cards.length} cards
           </div>
-
           <div className="flex gap-2">
             <button
               onClick={goToPrevPage}
@@ -498,11 +339,9 @@ Entizar key en aukat my Allah ko yaad karen:
             >
               Previous
             </button>
-
             <div className="px-4 py-2 bg-gray-100 rounded">
               Page {currentPage} of {totalPages}
             </div>
-
             <button
               onClick={goToNextPage}
               disabled={currentPage === totalPages}

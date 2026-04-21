@@ -26,7 +26,7 @@ const LoginComp = () => {
     setError("");
     try {
       const response = await axios.post(
-        "https://backendrepobaitusslamvou-production.up.railway.app/login",
+        `${import.meta.env.VITE_API_URL}/login`, // ✅ just the URL string
         data,
         { withCredentials: true },
       );
@@ -35,10 +35,9 @@ const LoginComp = () => {
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     } finally {
-      setLoading(false);
+      setLoading(false); // ✅ also add this so the button re-enables on failure
     }
   };
-
   return (
     <div className="flex flex-col min-w-full ">
       <h2 className="text-2xl font-bold  md:py-10">

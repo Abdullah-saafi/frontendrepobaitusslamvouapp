@@ -8,11 +8,10 @@ const ShowVou = () => {
   const [activeTab, setActiveTab] = useState("vouchers");
   const [vouchers, setVouchers] = useState([]);
   const [filters, setFilters] = useState({
+    voucherName: "",
     shopName: "",
     qrNumber: "",
     expiryDate: "",
-    discountType: "",
-    discountPercentage: "",
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -51,7 +50,8 @@ const ShowVou = () => {
   }, [filters]);
 
   const deleteVoucher = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this voucher?")) return;
+    if (!window.confirm("Are you sure you want to delete this voucher?"))
+      return;
 
     try {
       const res = await api.delete(`/delete-voucher/${id}`);
@@ -73,11 +73,10 @@ const ShowVou = () => {
 
   const clearFilters = () => {
     setFilters({
+      voucherName: "",
       shopName: "",
       qrNumber: "",
       expiryDate: "",
-      discountType: "",
-      discountPercentage: "",
     });
   };
 
@@ -100,19 +99,26 @@ const ShowVou = () => {
     return { activeCards, usedCards };
   };
 
+  const getVoucherNames = () => {
+    const names = [
+      ...new Set(vouchers.map((v) => v.voucherName).filter(Boolean)),
+    ];
+    return names.sort();
+  };
+
   const getShopList = () => {
     const shops = [...new Set(vouchers.map((v) => v.shopName))];
     return shops.sort();
   };
 
-  const getDiscountTypes = () => {
-    const types = [...new Set(vouchers.map((v) => v.discountType))];
-    return types.filter(Boolean).sort();
-  };
-
-  const getDiscountPercentages = () => {
-    const percentages = [...new Set(vouchers.map((v) => v.discountPercentage))];
-    return percentages.filter(Boolean).sort((a, b) => a - b);
+  // Format discount display
+  const formatDiscount = (voucher) => {
+    if (voucher.discountPercentage === "percentage") {
+      return `${voucher.discountValue}%`;
+    } else if (voucher.discountPercentage === "rupee") {
+      return `PKR ${voucher.discountValue}`;
+    }
+    return `${voucher.discountPercentage}%`; // Fallback for old data
   };
 
   const getFilteredCards = () => {
@@ -122,8 +128,9 @@ const ShowVou = () => {
       voucher.cards.forEach((card) => {
         allCards.push({
           ...card,
+          voucherName: voucher.voucherName || "N/A",
           shopName: voucher.shopName,
-          discount: voucher.discountPercentage,
+          discount: formatDiscount(voucher),
           expiryDate: voucher.expiryDate,
           discountType: voucher.discountType,
           specificTests: voucher.specificTests,
@@ -133,10 +140,19 @@ const ShowVou = () => {
 
     let filtered = allCards;
 
+    // Apply voucher name filter
+    if (filters.voucherName) {
+      filtered = filtered.filter(
+        (card) => card.voucherName === filters.voucherName,
+      );
+    }
+
+    // Apply shop name filter
     if (filters.shopName) {
       filtered = filtered.filter((card) => card.shopName === filters.shopName);
     }
 
+    // Apply QR number filter
     if (filters.qrNumber.trim()) {
       filtered = filtered.filter((card) =>
         card.cardNumber
@@ -145,6 +161,7 @@ const ShowVou = () => {
       );
     }
 
+    // Apply expiry date filter
     if (filters.expiryDate) {
       filtered = filtered.filter((card) => {
         const cardExpiry = new Date(card.expiryDate)
@@ -152,18 +169,6 @@ const ShowVou = () => {
           .split("T")[0];
         return cardExpiry === filters.expiryDate;
       });
-    }
-
-    if (filters.discountType) {
-      filtered = filtered.filter(
-        (card) => card.discountType === filters.discountType,
-      );
-    }
-
-    if (filters.discountPercentage) {
-      filtered = filtered.filter(
-        (card) => card.discount === parseInt(filters.discountPercentage),
-      );
     }
 
     return filtered;
@@ -174,10 +179,11 @@ const ShowVou = () => {
 
     const excelData = allFilteredCards.map((card, index) => ({
       "#": index + 1,
+      "Voucher Name": card.voucherName,
       "Shop Name": card.shopName,
       "Card Number": card.cardNumber,
       "QR Code": card.qrCode,
-      "Discount (%)": card.discount,
+      Discount: card.discount,
       "Discount Type": card.discountType || "-",
       "Expiry Date": card.expiryDate
         ? new Date(card.expiryDate).toLocaleDateString()
@@ -200,7 +206,13 @@ const ShowVou = () => {
   if (loading) {
     return (
       <div className="p-6 flex justify-center items-center min-h-screen">
-        <div className={activeTab === "vouchers" ? "text-xl text-gray-600" : "text-3xl text-red-600"}>
+        <div
+          className={
+            activeTab === "vouchers"
+              ? "text-xl text-gray-600"
+              : "text-3xl text-red-600"
+          }
+        >
           {activeTab === "vouchers"
             ? "Loading vouchers..."
             : "Say Subhan Allah Until Loading..."}
@@ -212,9 +224,13 @@ const ShowVou = () => {
   if (error) {
     return (
       <div className="p-6">
-        <div className={activeTab === "vouchers" 
-          ? "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
-          : "bg-red-100 text-red-700 p-4 rounded"}>
+        <div
+          className={
+            activeTab === "vouchers"
+              ? "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+              : "bg-red-100 text-red-700 p-4 rounded"
+          }
+        >
           {error}
         </div>
       </div>
@@ -238,8 +254,9 @@ const ShowVou = () => {
   ];
 
   const columns = [
+    { key: "voucherName", label: "Voucher Name" },
     { key: "shopName", label: "Shop Name" },
-    { key: "discount", label: "Discount %" },
+    { key: "discount", label: "Discount" },
     { key: "applicableOn", label: "Discount Type" },
     { key: "expiryDate", label: "Expiry Date" },
     { key: "totalCards", label: "Total Issues Cards" },
@@ -247,9 +264,8 @@ const ShowVou = () => {
     { key: "actions", label: "Actions" },
   ];
 
+  const voucherNames = getVoucherNames();
   const shopList = getShopList();
-  const discountTypes = getDiscountTypes();
-  const discountPercentages = getDiscountPercentages();
   const allFilteredCards = getFilteredCards();
 
   const totalPages = Math.ceil(allFilteredCards.length / itemsPerPage);
@@ -353,12 +369,16 @@ const ShowVou = () => {
                         return (
                           <tr key={voucher._id} className="hover:bg-gray-50">
                             <td className="border border-gray-400 p-4 font-semibold">
+                              {voucher.voucherName || "N/A"}
+                            </td>
+
+                            <td className="border border-gray-400 p-4 font-semibold">
                               {voucher.shopName}
                             </td>
 
                             <td className="border border-gray-400 p-4">
                               <span className="px-3 py-1 bg-green-100 text-green-800 rounded font-bold">
-                                {voucher.discountPercentage}%
+                                {formatDiscount(voucher)}
                               </span>
                             </td>
 
@@ -429,8 +449,6 @@ const ShowVou = () => {
       {/* Cards Tab Content */}
       {activeTab === "cards" && (
         <div className="mb-10">
-  
-
           {/* Filter Section */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
@@ -454,7 +472,28 @@ const ShowVou = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Voucher Name Filter */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Voucher Name
+                </label>
+                <select
+                  value={filters.voucherName}
+                  onChange={(e) =>
+                    handleFilterChange("voucherName", e.target.value)
+                  }
+                  className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- All Vouchers --</option>
+                  {voucherNames.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Shop Name Filter */}
               <div>
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
@@ -506,43 +545,6 @@ const ShowVou = () => {
                   className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
-              {/* Discount Type Filter */}
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Discount Type
-                </label>
-                <select
-                  value={filters.discountType}
-                  onChange={(e) =>
-                    handleFilterChange("discountType", e.target.value)
-                  }
-                  className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- All Types --</option>
-                  {discountTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Discount Percentage Filter */}
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Discount Percentage
-                </label>
-                <input
-                  type="text"
-                  value={filters.discountPercentage}
-                  onChange={(e) =>
-                    handleFilterChange("discountPercentage", e.target.value)
-                  }
-                  placeholder="Enter discount %..."
-                  className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
             </div>
 
             {/* Active Filters Summary */}
@@ -564,6 +566,9 @@ const ShowVou = () => {
                     <tr>
                       <th className="border border-gray-400 p-3 text-center">
                         #
+                      </th>
+                      <th className="border border-gray-400 p-3 text-left">
+                        Voucher Name
                       </th>
                       <th className="border border-gray-400 p-3 text-left">
                         Shop Name
@@ -603,6 +608,10 @@ const ShowVou = () => {
                         </td>
 
                         <td className="border border-gray-400 p-3">
+                          {card.voucherName}
+                        </td>
+
+                        <td className="border border-gray-400 p-3">
                           {card.shopName}
                         </td>
 
@@ -615,11 +624,13 @@ const ShowVou = () => {
                         </td>
 
                         <td className="border border-gray-400 p-3 text-center font-semibold">
-                          {card.discount}%
+                          {card.discount}
                         </td>
 
                         <td className="border border-gray-400 p-3 text-center">
-                          {card.discountType || "-"}
+                          {card.discountType === "all_tests"
+                            ? "All Tests"
+                            : "Specific Tests"}
                         </td>
 
                         <td className="border border-gray-400 p-3 text-center">
@@ -657,7 +668,6 @@ const ShowVou = () => {
                 </table>
               </div>
 
-              {/* Pagination Controls */}
               <div className="mt-6 flex justify-between items-center bg-white p-4 rounded shadow">
                 <div className="text-gray-600">
                   Showing {startIndex + 1} to{" "}

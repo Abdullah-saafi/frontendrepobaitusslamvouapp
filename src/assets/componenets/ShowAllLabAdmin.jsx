@@ -37,7 +37,8 @@ const ShowAllCardAdmin = () => {
           usedCards.push({
             ...card,
             shopName: voucher.shopName,
-            discount: voucher.discountPercentage,
+            discount: Number(voucher.discountValue) || 0,
+            discountType: voucher.discountPercentage,
           });
         }
       });
@@ -350,8 +351,10 @@ const ShowAllCardAdmin = () => {
                           {scan.cardNumber}
                         </td>
                         <td className="border p-3 text-center">
-                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">
-                            {scan.discount}%
+                          <span className="px-2 py-1 rounded font-semibold">
+                            {scan.discountType === "percentage"
+                              ? `${scan.discount}%`
+                              : `PKR ${scan.discount}`}
                           </span>
                         </td>
                         <td className="border p-3">
