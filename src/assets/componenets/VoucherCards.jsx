@@ -128,6 +128,7 @@ const VoucherCards = () => {
       const cols = 3;
       const rows = Math.ceil(cardsPerPage / cols);
       const margin = 2;
+      const gap = 4;
       const cardWidth = (pageWidth - margin * 2) / cols;
       const cardHeight = (pageHeight - margin * 2) / rows;
 
@@ -155,8 +156,10 @@ const VoucherCards = () => {
         const finalWidth = imgWidth * ratio;
         const finalHeight = imgHeight * ratio;
 
-        const x = margin + col * cardWidth + (cardWidth - finalWidth) / 2;
-        const y = margin + row * cardHeight + (cardHeight - finalHeight) / 2;
+        const x =
+          margin + col * (cardWidth + gap) + (cardWidth - finalWidth) / 2;
+        const y =
+          margin + row * (cardHeight + gap) + (cardHeight - finalHeight) / 2;
 
         pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
       }

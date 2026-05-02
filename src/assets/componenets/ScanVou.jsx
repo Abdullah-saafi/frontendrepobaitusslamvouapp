@@ -231,7 +231,7 @@ const ScanVou = () => {
                 {cardData.voucher.shopName}
               </h3>
               <p className="text-6xl font-bold mt-3">
-                {cardData.voucher.discountPercentage}%
+                {cardData.voucher.discountValue}%
               </p>
               <p className="text-sm mt-2 opacity-90">DISCOUNT</p>
             </div>
