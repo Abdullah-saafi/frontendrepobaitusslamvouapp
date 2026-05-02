@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 // import axios from "axios";
-import api from "../../utils/axios";
+import api from "../../utils/api";
 import { useAuth } from "../context/AuthContext";
 
 const LoginComp = () => {
