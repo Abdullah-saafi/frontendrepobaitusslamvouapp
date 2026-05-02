@@ -385,7 +385,7 @@ const CreateVou = () => {
               <div className="col-span-1 md:col-span-2 flex items-center gap-3">
                 <p className="text-gray-600 font-semibold">Card Image:</p>
                 <img
-                  src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${createdVoucher.partnerImageUrl}`}
+                  src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"}${createdVoucher.partnerImageUrl}`}
                   alt="partner"
                   className="h-14 w-20 object-cover rounded-lg border border-gray-200"
                 />

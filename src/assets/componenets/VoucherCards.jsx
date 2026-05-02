@@ -6,9 +6,9 @@ import { QRCode } from "react-qr-code";
 import jsPDF from "jspdf";
 
 // Prefix for image URLs stored as /uploads/partners/filename.jpg
-// Set VITE_API_BASE_URL in your .env — e.g. VITE_API_BASE_URL=http://localhost:5000
+// Set VITE_API_BASE_URL in your .env — e.g. VITE_API_BASE_URL=http://localhost:
 const SERVER_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const VoucherCards = () => {
   const { id } = useParams();

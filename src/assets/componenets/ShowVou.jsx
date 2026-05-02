@@ -23,7 +23,6 @@ const ShowVou = () => {
     try {
       setLoading(true);
       const res = await api.get("/vouchers");
-
       if (res.data.success) {
         setVouchers(res.data.data);
       } else if (Array.isArray(res.data)) {
@@ -31,7 +30,6 @@ const ShowVou = () => {
       } else {
         setVouchers([]);
       }
-
       setError("");
       setLoading(false);
     } catch (err) {
@@ -52,7 +50,6 @@ const ShowVou = () => {
   const deleteVoucher = async (id) => {
     if (!window.confirm("Are you sure you want to delete this voucher?"))
       return;
-
     try {
       const res = await api.delete(`/delete-voucher/${id}`);
       alert(res.data.message || "Voucher deleted successfully");
@@ -72,12 +69,7 @@ const ShowVou = () => {
   };
 
   const clearFilters = () => {
-    setFilters({
-      voucherName: "",
-      shopName: "",
-      qrNumber: "",
-      expiryDate: "",
-    });
+    setFilters({ voucherName: "", shopName: "", qrNumber: "", expiryDate: "" });
   };
 
   const getStatistics = () => {
@@ -87,7 +79,6 @@ const ShowVou = () => {
       (sum, v) => sum + v.cards.filter((c) => c.status === "active").length,
       0,
     );
-
     return { totalVouchers, totalCards, activeCards };
   };
 
@@ -111,16 +102,36 @@ const ShowVou = () => {
     return shops.sort();
   };
 
-  // Format discount display
   const formatDiscount = (voucher) => {
     if (voucher.discountPercentage === "percentage") {
       return `${voucher.discountValue}%`;
     } else if (voucher.discountPercentage === "rupee") {
       return `PKR ${voucher.discountValue}`;
     }
-    return `${voucher.discountPercentage}%`; // Fallback for old data
+    return `${voucher.discountPercentage}%`;
   };
 
+  // ─── FILTERED VOUCHERS (for "All Vouchers" tab) ───────────────────────────
+  const getFilteredVouchers = () => {
+    let filtered = vouchers;
+
+    if (filters.voucherName) {
+      filtered = filtered.filter((v) => v.voucherName === filters.voucherName);
+    }
+    if (filters.shopName) {
+      filtered = filtered.filter((v) => v.shopName === filters.shopName);
+    }
+    if (filters.expiryDate) {
+      filtered = filtered.filter((v) => {
+        const d = new Date(v.expiryDate).toISOString().split("T")[0];
+        return d === filters.expiryDate;
+      });
+    }
+
+    return filtered;
+  };
+
+  // ─── FILTERED CARDS (for "Specific Voucher Details" tab) ─────────────────
   const getFilteredCards = () => {
     const allCards = [];
 
@@ -140,19 +151,14 @@ const ShowVou = () => {
 
     let filtered = allCards;
 
-    // Apply voucher name filter
     if (filters.voucherName) {
       filtered = filtered.filter(
         (card) => card.voucherName === filters.voucherName,
       );
     }
-
-    // Apply shop name filter
     if (filters.shopName) {
       filtered = filtered.filter((card) => card.shopName === filters.shopName);
     }
-
-    // Apply QR number filter
     if (filters.qrNumber.trim()) {
       filtered = filtered.filter((card) =>
         card.cardNumber
@@ -160,8 +166,6 @@ const ShowVou = () => {
           .includes(filters.qrNumber.toLowerCase().trim()),
       );
     }
-
-    // Apply expiry date filter
     if (filters.expiryDate) {
       filtered = filtered.filter((card) => {
         const cardExpiry = new Date(card.expiryDate)
@@ -176,7 +180,6 @@ const ShowVou = () => {
 
   const exportToExcel = () => {
     const allFilteredCards = getFilteredCards();
-
     const excelData = allFilteredCards.map((card, index) => ({
       "#": index + 1,
       "Voucher Name": card.voucherName,
@@ -196,27 +199,14 @@ const ShowVou = () => {
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Voucher Cards");
-
     const timestamp = new Date().toISOString().split("T")[0];
-    const filename = `Voucher_Cards_${timestamp}.xlsx`;
-
-    XLSX.writeFile(workbook, filename);
+    XLSX.writeFile(workbook, `Voucher_Cards_${timestamp}.xlsx`);
   };
 
   if (loading) {
     return (
       <div className="p-6 flex justify-center items-center min-h-screen">
-        <div
-          className={
-            activeTab === "vouchers"
-              ? "text-xl text-gray-600"
-              : "text-3xl text-red-600"
-          }
-        >
-          {activeTab === "vouchers"
-            ? "Loading vouchers..."
-            : "Say Subhan Allah Until Loading..."}
-        </div>
+        <div className="text-xl text-gray-600">Loading vouchers...</div>
       </div>
     );
   }
@@ -224,13 +214,7 @@ const ShowVou = () => {
   if (error) {
     return (
       <div className="p-6">
-        <div
-          className={
-            activeTab === "vouchers"
-              ? "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
-              : "bg-red-100 text-red-700 p-4 rounded"
-          }
-        >
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           {error}
         </div>
       </div>
@@ -239,18 +223,9 @@ const ShowVou = () => {
 
   const stats = getStatistics();
   const statCards = [
-    {
-      label: "Total Issuance Vouchers",
-      value: stats.totalVouchers,
-    },
-    {
-      label: "Total Cards",
-      value: stats.totalCards,
-    },
-    {
-      label: "Active Cards",
-      value: stats.activeCards,
-    },
+    { label: "Total Issuance Vouchers", value: stats.totalVouchers },
+    { label: "Total Cards", value: stats.totalCards },
+    { label: "Active Cards", value: stats.activeCards },
   ];
 
   const columns = [
@@ -266,6 +241,7 @@ const ShowVou = () => {
 
   const voucherNames = getVoucherNames();
   const shopList = getShopList();
+  const filteredVouchers = getFilteredVouchers();
   const allFilteredCards = getFilteredCards();
 
   const totalPages = Math.ceil(allFilteredCards.length / itemsPerPage);
@@ -274,16 +250,115 @@ const ShowVou = () => {
   const displayCards = allFilteredCards.slice(startIndex, endIndex);
 
   const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+  const goToPrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
-  const goToPrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  // ─── Shared Filter Bar Component ─────────────────────────────────────────
+  const FilterBar = ({ showQrFilter = false }) => (
+    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold text-gray-700">Search Filters</h3>
+        <div className="flex gap-2">
+          {showQrFilter && (
+            <button
+              onClick={exportToExcel}
+              disabled={allFilteredCards.length === 0}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              Export to Excel
+            </button>
+          )}
+          <button
+            onClick={clearFilters}
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+          >
+            Clear All Filters
+          </button>
+        </div>
+      </div>
+
+      <div
+        className={`grid grid-cols-1 gap-4 ${showQrFilter ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3"}`}
+      >
+        {/* Voucher Name */}
+        <div>
+          <label className="block text-sm font-semibold mb-2 text-gray-700">
+            Voucher Name
+          </label>
+          <select
+            value={filters.voucherName}
+            onChange={(e) => handleFilterChange("voucherName", e.target.value)}
+            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">-- All Vouchers --</option>
+            {voucherNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Shop Name */}
+        <div>
+          <label className="block text-sm font-semibold mb-2 text-gray-700">
+            Shop Name
+          </label>
+          <select
+            value={filters.shopName}
+            onChange={(e) => handleFilterChange("shopName", e.target.value)}
+            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">-- All Shops --</option>
+            {shopList.map((shop) => (
+              <option key={shop} value={shop}>
+                {shop}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* QR / Card Number — only in cards tab */}
+        {showQrFilter && (
+          <div>
+            <label className="block text-sm font-semibold mb-2 text-gray-700">
+              Card / QR Number
+            </label>
+            <input
+              type="text"
+              value={filters.qrNumber}
+              onChange={(e) => handleFilterChange("qrNumber", e.target.value)}
+              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+              placeholder="Search card number..."
+            />
+          </div>
+        )}
+
+        {/* Expiry Date */}
+        <div>
+          <label className="block text-sm font-semibold mb-2 text-gray-700">
+            Expiry Date
+          </label>
+          <input
+            type="date"
+            value={filters.expiryDate}
+            onChange={(e) => handleFilterChange("expiryDate", e.target.value)}
+            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 text-sm text-gray-600">
+        <strong>Results:</strong>{" "}
+        {showQrFilter
+          ? `${allFilteredCards.length} card(s) found`
+          : `${filteredVouchers.length} voucher(s) found`}
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-6">
@@ -292,28 +367,28 @@ const ShowVou = () => {
         <div className="flex gap-4">
           <button
             onClick={() => setActiveTab("vouchers")}
-            className={`px-2 py- font-semibold text-lg transition-colors ${
+            className={`px-2 py-2 font-semibold text-lg transition-colors ${
               activeTab === "vouchers"
                 ? "border-b-4 border-blue-600 text-blue-600"
                 : "text-gray-600 hover:text-blue-600"
             }`}
           >
-            All Vouuchers Lists
+            All Vouchers List
           </button>
           <button
             onClick={() => setActiveTab("cards")}
-            className={`px-2 py- font-semibold text-lg transition-colors ${
+            className={`px-2 py-2 font-semibold text-lg transition-colors ${
               activeTab === "cards"
                 ? "border-b-4 border-blue-600 text-blue-600"
                 : "text-gray-600 hover:text-blue-600"
             }`}
           >
-            Specific VouchersDetails
+            Specific Voucher Details
           </button>
         </div>
       </div>
 
-      {/* Vouchers Tab Content */}
+      {/* ── VOUCHERS TAB ─────────────────────────────────────────────────── */}
       {activeTab === "vouchers" && (
         <div>
           {vouchers.length === 0 ? (
@@ -327,6 +402,7 @@ const ShowVou = () => {
             </div>
           ) : (
             <>
+              {/* Stat Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 shadow-lg shadow-black-500/50">
                 {statCards.map((stat) => (
                   <div
@@ -339,221 +415,121 @@ const ShowVou = () => {
                 ))}
               </div>
 
-              <div className="bg-white rounded-lg shadow-lg shadow-black-500/50">
-                <div className="overflow-x-auto">
-                  <table className="w-full border border-gray-400 border-collapse font-2xl">
-                    <thead className="text-xl font-extrabold bg-gray-100">
-                      <tr>
-                        {columns.map((col) => (
-                          <th
-                            key={col.key}
-                            className={`border border-gray-400 p-4 font-semibold ${
-                              ["totalCards", "active", "actions"].includes(
-                                col.key,
-                              )
-                                ? "text-center"
-                                : "text-left"
-                            }`}
-                          >
-                            {col.label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
+              {/* Filter Bar (no QR filter in vouchers tab) */}
+              <FilterBar showQrFilter={false} />
 
-                    <tbody>
-                      {vouchers.map((voucher) => {
-                        const { activeCards, usedCards } =
-                          getCardCounts(voucher);
-
-                        return (
-                          <tr key={voucher._id} className="hover:bg-gray-50">
-                            <td className="border border-gray-400 p-4 font-semibold">
-                              {voucher.voucherName || "N/A"}
-                            </td>
-
-                            <td className="border border-gray-400 p-4 font-semibold">
-                              {voucher.shopName}
-                            </td>
-
-                            <td className="border border-gray-400 p-4">
-                              <span className="px-3 py-1 bg-green-100 text-green-800 rounded font-bold">
-                                {formatDiscount(voucher)}
-                              </span>
-                            </td>
-
-                            <td className="border border-gray-400 p-4">
-                              {voucher.discountType === "specific_tests" ? (
-                                <>
-                                  <div className="text-sm font-semibold text-blue-700">
-                                    Specific Tests
-                                  </div>
-                                  <div className="text-xs text-gray-600">
-                                    {voucher.specificTests.join(", ")}
-                                  </div>
-                                </>
-                              ) : (
-                                <span className="text-sm font-semibold text-purple-700">
-                                  All Tests
-                                </span>
-                              )}
-                            </td>
-
-                            <td className="border border-gray-400 p-4">
-                              {new Date(
-                                voucher.expiryDate,
-                              ).toLocaleDateString()}
-                            </td>
-
-                            <td className="border border-gray-400 p-4 text-center font-bold">
-                              {voucher.totalCards}
-                            </td>
-
-                            <td className="border border-gray-400 p-4 text-center">
-                              <div className="font-bold text-green-600">
-                                {activeCards}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                ({usedCards} used)
-                              </div>
-                            </td>
-
-                            <td className="border border-gray-400 p-4">
-                              <div className="flex gap-2 justify-center">
-                                <button
-                                  onClick={() => viewCards(voucher._id)}
-                                  className="px-3 py-2 bg-blue-500 text-white rounded"
-                                >
-                                  View
-                                </button>
-                                <button
-                                  onClick={() => deleteVoucher(voucher._id)}
-                                  className="px-3 py-2 bg-red-500 text-white rounded"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+              {filteredVouchers.length === 0 ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-10 text-center">
+                  <p className="text-gray-500 text-lg">
+                    No vouchers match the selected filters.
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-lg shadow-black-500/50">
+                  <div className="overflow-x-auto">
+                    <table className="w-full border border-gray-400 border-collapse text-base">
+                      <thead className="text-xl font-extrabold bg-gray-100">
+                        <tr>
+                          {columns.map((col) => (
+                            <th
+                              key={col.key}
+                              className={`border border-gray-400 p-4 font-semibold ${
+                                ["totalCards", "active", "actions"].includes(
+                                  col.key,
+                                )
+                                  ? "text-center"
+                                  : "text-left"
+                              }`}
+                            >
+                              {col.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredVouchers.map((voucher) => {
+                          const { activeCards, usedCards } =
+                            getCardCounts(voucher);
+                          return (
+                            <tr key={voucher._id} className="hover:bg-gray-50">
+                              <td className="border border-gray-400 p-4 font-semibold">
+                                {voucher.voucherName || "N/A"}
+                              </td>
+                              <td className="border border-gray-400 p-4 font-semibold">
+                                {voucher.shopName}
+                              </td>
+                              <td className="border border-gray-400 p-4">
+                                <span className="px-3 py-1 bg-green-100 text-green-800 rounded font-bold">
+                                  {formatDiscount(voucher)}
+                                </span>
+                              </td>
+                              <td className="border border-gray-400 p-4">
+                                {voucher.discountType === "specific_tests" ? (
+                                  <>
+                                    <div className="text-sm font-semibold text-blue-700">
+                                      Specific Tests
+                                    </div>
+                                    <div className="text-xs text-gray-600">
+                                      {voucher.specificTests.join(", ")}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <span className="text-sm font-semibold text-purple-700">
+                                    All Tests
+                                  </span>
+                                )}
+                              </td>
+                              <td className="border border-gray-400 p-4">
+                                {new Date(
+                                  voucher.expiryDate,
+                                ).toLocaleDateString()}
+                              </td>
+                              <td className="border border-gray-400 p-4 text-center font-bold">
+                                {voucher.totalCards}
+                              </td>
+                              <td className="border border-gray-400 p-4 text-center">
+                                <div className="font-bold text-green-600">
+                                  {activeCards}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  ({usedCards} used)
+                                </div>
+                              </td>
+                              <td className="border border-gray-400 p-4">
+                                <div className="flex gap-2 justify-center">
+                                  <button
+                                    onClick={() => viewCards(voucher._id)}
+                                    className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                  >
+                                    View
+                                  </button>
+                                  <button
+                                    onClick={() => deleteVoucher(voucher._id)}
+                                    className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
       )}
 
-      {/* Cards Tab Content */}
+      {/* ── CARDS TAB ────────────────────────────────────────────────────── */}
       {activeTab === "cards" && (
         <div className="mb-10">
-          {/* Filter Section */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-700">
-                Search Filters
-              </h3>
-              <div className="flex gap-2">
-                <button
-                  onClick={exportToExcel}
-                  disabled={allFilteredCards.length === 0}
-                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                  Export to Excel
-                </button>
-                <button
-                  onClick={clearFilters}
-                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                >
-                  Clear All Filters
-                </button>
-              </div>
-            </div>
+          {/* Filter Bar (with QR filter) */}
+          <FilterBar showQrFilter={true} />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Voucher Name Filter */}
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Voucher Name
-                </label>
-                <select
-                  value={filters.voucherName}
-                  onChange={(e) =>
-                    handleFilterChange("voucherName", e.target.value)
-                  }
-                  className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- All Vouchers --</option>
-                  {voucherNames.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Shop Name Filter */}
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Shop Name
-                </label>
-                <select
-                  value={filters.shopName}
-                  onChange={(e) =>
-                    handleFilterChange("shopName", e.target.value)
-                  }
-                  className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- All Shops --</option>
-                  {shopList.map((shop) => (
-                    <option key={shop} value={shop}>
-                      {shop}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* QR/Card Number Filter */}
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Card/QR Number
-                </label>
-                <input
-                  type="text"
-                  value={filters.qrNumber}
-                  onChange={(e) =>
-                    handleFilterChange("qrNumber", e.target.value)
-                  }
-                  className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                  placeholder="Search card number..."
-                />
-              </div>
-
-              {/* Expiry Date Filter */}
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Expiry Date
-                </label>
-                <input
-                  type="date"
-                  value={filters.expiryDate}
-                  onChange={(e) =>
-                    handleFilterChange("expiryDate", e.target.value)
-                  }
-                  className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Active Filters Summary */}
-            <div className="mt-4 text-sm text-gray-600">
-              <strong>Results:</strong> {allFilteredCards.length} card(s) found
-            </div>
-          </div>
-
-          {/* Results Table */}
           {allFilteredCards.length === 0 ? (
             <p className="text-center text-gray-500 bg-white p-8 rounded shadow">
               No cards found matching your filters
@@ -599,46 +575,39 @@ const ShowVou = () => {
                       </th>
                     </tr>
                   </thead>
-
                   <tbody>
                     {displayCards.map((card, index) => (
                       <tr key={card.cardNumber} className="hover:bg-gray-50">
                         <td className="border border-gray-400 p-3 text-center font-bold">
                           {startIndex + index + 1}
                         </td>
-
                         <td className="border border-gray-400 p-3">
                           {card.voucherName}
                         </td>
-
                         <td className="border border-gray-400 p-3">
                           {card.shopName}
                         </td>
-
                         <td className="border border-gray-400 p-3 font-mono">
                           {card.cardNumber}
                         </td>
-
-                        <td className="border border-gray-400 p-3 flex justify-center">
-                          <QRCode value={card.qrCode} size={70} />
+                        <td className="border border-gray-400 p-3">
+                          <div className="flex justify-center">
+                            <QRCode value={card.qrCode} size={70} />
+                          </div>
                         </td>
-
                         <td className="border border-gray-400 p-3 text-center font-semibold">
                           {card.discount}
                         </td>
-
                         <td className="border border-gray-400 p-3 text-center">
                           {card.discountType === "all_tests"
                             ? "All Tests"
                             : "Specific Tests"}
                         </td>
-
                         <td className="border border-gray-400 p-3 text-center">
                           {card.expiryDate
                             ? new Date(card.expiryDate).toLocaleDateString()
                             : "-"}
                         </td>
-
                         <td className="border border-gray-400 p-3 text-center">
                           <span
                             className={`px-3 py-1 rounded text-white text-xs ${
@@ -652,11 +621,9 @@ const ShowVou = () => {
                             {card.status}
                           </span>
                         </td>
-
                         <td className="border border-gray-400 p-3">
                           {card.usedBy || "-"}
                         </td>
-
                         <td className="border border-gray-400 p-3">
                           {card.usedAt
                             ? new Date(card.usedAt).toLocaleDateString()
@@ -668,13 +635,13 @@ const ShowVou = () => {
                 </table>
               </div>
 
+              {/* Pagination */}
               <div className="mt-6 flex justify-between items-center bg-white p-4 rounded shadow">
                 <div className="text-gray-600">
                   Showing {startIndex + 1} to{" "}
                   {Math.min(endIndex, allFilteredCards.length)} of{" "}
                   {allFilteredCards.length} cards
                 </div>
-
                 <div className="flex gap-2">
                   <button
                     onClick={goToPrevPage}
@@ -683,11 +650,9 @@ const ShowVou = () => {
                   >
                     Previous
                   </button>
-
                   <div className="px-4 py-2 bg-gray-100 rounded">
                     Page {currentPage} of {totalPages}
                   </div>
-
                   <button
                     onClick={goToNextPage}
                     disabled={currentPage === totalPages}
