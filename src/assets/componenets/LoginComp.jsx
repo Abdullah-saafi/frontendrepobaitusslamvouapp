@@ -26,7 +26,7 @@ const LoginComp = () => {
     setLoading(true);
     setError("");
     try {
-const response = await api.post("/api/auth/login", data);
+const response = await api.post("/login", data);
 
       login(response.data, response.data.token);
     } catch (err) {
