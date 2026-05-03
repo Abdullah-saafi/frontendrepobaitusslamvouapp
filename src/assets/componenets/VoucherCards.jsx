@@ -265,7 +265,7 @@ const partnerImageUrl = voucher?.partnerImageUrl
 
       {/* Cards grid */}
       <main className="  ">
-        <div className="grid grid-cols-1 md:grid-cols-4  gap-2 my-2 relative">
+        <div className="grid grid-cols-1 md:grid-cols-3  gap-2 my-2 relative">
           {displayCards.map((card, index) => (
             <div
               key={card.cardNumber}
