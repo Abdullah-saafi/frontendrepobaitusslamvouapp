@@ -385,8 +385,9 @@ const CreateVou = () => {
               <div className="col-span-1 md:col-span-2 flex items-center gap-3">
                 <p className="text-gray-600 font-semibold">Card Image:</p>
                 <img
-                  src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"}${createdVoucher.partnerImageUrl}`}
-                  alt="partner"
+                  // ✅ New — Cloudinary URL is already complete
+                  src={createdVoucher.partnerImageUrl}
+                  alt="img Template  partner"
                   className="h-14 w-20 object-cover rounded-lg border border-gray-200"
                 />
                 <span className="text-green-600 text-sm font-medium">
