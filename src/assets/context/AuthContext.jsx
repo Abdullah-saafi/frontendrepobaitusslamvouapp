@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
-import axios from "axios";
+import api from "../utils/api"; // ✅ use api instance
 
 const AuthContext = createContext(null);
 
@@ -8,18 +8,18 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token"); // ✅ sessionStorage
     if (token) {
       verifyToken(token);
     } else {
       setLoading(false);
     }
   }, []);
- 
+
   const verifyToken = async (token) => {
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/verify`,
+      const response = await api.post(       // ✅ api instance
+        "/verify",                            // ✅ clean path
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -32,14 +32,14 @@ export const AuthProvider = ({ children }) => {
       });
     } catch (error) {
       console.error("Token verification failed", error);
-      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");    
     } finally {
       setLoading(false);
     }
   };
 
   const login = (userData, token) => {
-    localStorage.setItem("token", token);
+    sessionStorage.setItem("token", token);  
     setUser({
       name: userData.userName,
       role: userData.role,
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");      
     setUser(null);
   };
 
