@@ -6,9 +6,6 @@ import { QRCode } from "react-qr-code";
 import jsPDF from "jspdf";
 
 // Prefix for image URLs stored as /uploads/partners/filename.jpg
-// Set VITE_API_BASE_URL in your .env — e.g. VITE_API_BASE_URL=http://localhost:
-const SERVER_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const VoucherCards = () => {
   const { id } = useParams();
@@ -73,9 +70,9 @@ const VoucherCards = () => {
   };
 
   // Full URL for the partner image (null if none was uploaded)
-  const partnerImageUrl = voucher?.partnerImageUrl
-    ? `${SERVER_BASE}${voucher.partnerImageUrl}`
-    : null;
+const partnerImageUrl = voucher?.partnerImageUrl
+  ? voucher.partnerImageUrl
+  : null;
 
   // ── Shared html2canvas config ─────────────────────────────────────────────
   const getCanvasOptions = (index) => ({
