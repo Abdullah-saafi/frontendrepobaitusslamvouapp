@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
-import api from "../utils/api"; 
+import api from "../utils/api";
 
 const AuthContext = createContext(null);
 
@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("token"); 
+    const token = sessionStorage.getItem("token");
     if (token) {
       verifyToken(token);
     } else {
@@ -18,8 +18,8 @@ export const AuthProvider = ({ children }) => {
 
   const verifyToken = async (token) => {
     try {
-      const response = await api.post(       /
-        "/verify",                         
+      const response = await api.post(
+        "/verify",
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -32,14 +32,14 @@ export const AuthProvider = ({ children }) => {
       });
     } catch (error) {
       console.error("Token verification failed", error);
-      sessionStorage.removeItem("token");    
+      sessionStorage.removeItem("token");
     } finally {
       setLoading(false);
     }
   };
 
   const login = (userData, token) => {
-    sessionStorage.setItem("token", token);  
+    sessionStorage.setItem("token", token);
     setUser({
       name: userData.userName,
       role: userData.role,
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    sessionStorage.removeItem("token");      
+    sessionStorage.removeItem("token");
     setUser(null);
   };
 
