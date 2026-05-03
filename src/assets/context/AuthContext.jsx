@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
-import api from "../utils/api"; // ✅ use api instance
+import api from "../utils/api"; 
 
 const AuthContext = createContext(null);
 
@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("token"); // ✅ sessionStorage
+    const token = sessionStorage.getItem("token"); 
     if (token) {
       verifyToken(token);
     } else {
@@ -18,8 +18,8 @@ export const AuthProvider = ({ children }) => {
 
   const verifyToken = async (token) => {
     try {
-      const response = await api.post(       // ✅ api instance
-        "/verify",                            // ✅ clean path
+      const response = await api.post(       /
+        "/verify",                         
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
