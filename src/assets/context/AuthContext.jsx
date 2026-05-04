@@ -18,13 +18,9 @@ export const AuthProvider = ({ children }) => {
 
   const verifyToken = async (token) => {
     try {
-      const response = await api.post(
-        "/verify",
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await api.post("/verify", {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setUser({
         name: response.data.userName,
         role: response.data.role,
