@@ -19,21 +19,16 @@ const ShowVouLabTech = () => {
     try {
       setLoading(true);
       const res = await api.get("/vouchers");
-
       const myScans = [];
 
       res.data.forEach((voucher) => {
         voucher.cards.forEach((card) => {
-          if (
-            card.status === "used" &&
-            card.usedBy === user?.name &&
-            card.usedAt
-          ) {
+          if (card.status === "used" && card.usedBy === user?.name && card.usedAt) {
             myScans.push({
               ...card,
               shopName: voucher.shopName,
               branch: `${voucher.idName} - ${voucher.partnerArea}`,
-                 discount: voucher.discountValue,
+              discount: voucher.discountValue,
               discountType: voucher.discountPercentage,
             });
           }
@@ -49,15 +44,12 @@ const ShowVouLabTech = () => {
     }
   };
 
-  // 🔹 Date filter
   const filteredScans = scans.filter((card) => {
     const usedDate = new Date(card.usedAt);
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-    if (dateRange === "today") {
-      return usedDate >= startOfToday;
-    }
+    if (dateRange === "today") return usedDate >= startOfToday;
 
     if (dateRange === "yesterday") {
       const yesterday = new Date(startOfToday);
@@ -71,10 +63,9 @@ const ShowVouLabTech = () => {
       return usedDate >= tenDaysAgo;
     }
 
-    return true; // all
+    return true;
   });
 
-  // 🔹 Export to Excel
   const exportToExcel = () => {
     const data = filteredScans.map((card, index) => ({
       "#": index + 1,
@@ -82,15 +73,14 @@ const ShowVouLabTech = () => {
       "Branch": card.branch,
       "Card Number": card.cardNumber,
       "Discount": card.discountType === "percentage"
-  ? `${card.discount}%`
-  : `PKR ${card.discount}`,
+        ? `${card.discount}%`
+        : `PKR ${card.discount}`,
       "Scanned At": new Date(card.usedAt).toLocaleString(),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "My Scans");
-
     XLSX.writeFile(workbook, "My_Voucher_Scans.xlsx");
   };
 
@@ -103,16 +93,13 @@ const ShowVouLabTech = () => {
   }
 
   if (error) {
-    return (
-      <div className="p-6 text-red-600 bg-red-100 rounded">{error}</div>
-    );
+    return <div className="p-6 text-red-600 bg-red-100 rounded">{error}</div>;
   }
 
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">My Voucher Scans</h2>
 
-      {/* 🔹 Controls */}
       <div className="flex flex-col sm:flex-row gap-4 mb-4">
         <select
           value={dateRange}
@@ -150,23 +137,20 @@ const ShowVouLabTech = () => {
                 <th className="p-3 border">Date</th>
               </tr>
             </thead>
-
             <tbody>
               {filteredScans.map((card, index) => (
                 <tr key={card.cardNumber} className="hover:bg-gray-50">
                   <td className="p-3 border text-center">{index + 1}</td>
                   <td className="p-3 border">{card.shopName}</td>
                   <td className="p-3 border">{card.branch}</td>
-                  <td className="p-3 border ">{card.cardNumber}</td>
-                  <td className="p-1  flex justify-center">
+                  <td className="p-3 border">{card.cardNumber}</td>
+                  <td className="p-1 flex justify-center">
                     <QRCode value={card.qrCode} size={50} />
                   </td>
                   <td className="p-3 border text-center font-bold">
-                    <td className="p-3 border text-center font-bold">
-  {card.discountType === "percentage"
-    ? `${card.discount}%`
-    : `PKR ${card.discount}`}
-</td>
+                    {card.discountType === "percentage"
+                      ? `${card.discount}%`
+                      : `PKR ${card.discount}`}
                   </td>
                   <td className="p-3 border text-sm">
                     {new Date(card.usedAt).toLocaleString()}
