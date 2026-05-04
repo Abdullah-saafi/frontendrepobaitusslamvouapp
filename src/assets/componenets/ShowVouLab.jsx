@@ -33,7 +33,8 @@ const ShowVouLabTech = () => {
               ...card,
               shopName: voucher.shopName,
               branch: `${voucher.idName} - ${voucher.partnerArea}`,
-              discount: voucher.discountPercentage,
+                 discount: voucher.discountValue,
+              discountType: voucher.discountPercentage,
             });
           }
         });
@@ -80,7 +81,9 @@ const ShowVouLabTech = () => {
       "Shop Name": card.shopName,
       "Branch": card.branch,
       "Card Number": card.cardNumber,
-      "Discount (%)": card.discount,
+      "Discount": card.discountType === "percentage"
+  ? `${card.discount}%`
+  : `PKR ${card.discount}`,
       "Scanned At": new Date(card.usedAt).toLocaleString(),
     }));
 
@@ -159,7 +162,11 @@ const ShowVouLabTech = () => {
                     <QRCode value={card.qrCode} size={50} />
                   </td>
                   <td className="p-3 border text-center font-bold">
-                    {card.discount}%
+                    <td className="p-3 border text-center font-bold">
+  {card.discountType === "percentage"
+    ? `${card.discount}%`
+    : `PKR ${card.discount}`}
+</td>
                   </td>
                   <td className="p-3 border text-sm">
                     {new Date(card.usedAt).toLocaleString()}
